@@ -1,0 +1,30 @@
+<script setup>
+import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
+import { ClAddPlus } from "@kalimahapps/vue-icons";
+import { IcCancel } from "@kalimahapps/vue-icons";
+import { QuSendCancelled } from "@kalimahapps/vue-icons";
+const props = defineProps({
+    href: {
+        type: String,
+        required: true,
+    },
+    active: {
+        type: Boolean,
+    },
+});
+
+const classes = computed(() =>
+    props.active
+        ? 'flex items-center text-gray-900 rounded-lg bg-primary-200'
+        : 'flex items-center text-gray-900 rounded-lg'
+);
+</script>
+
+<template>
+    <Link :href="href" class="flex items-center py-2 px-2 text-xs text-white font-mono bg-danger-button hover:bg-danger-button-hover rounded-md">
+        <IcCancel class="text-lg mr-0.5" />
+        <slot />
+
+    </Link>
+</template>

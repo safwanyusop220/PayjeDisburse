@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .text-xxs-custom {
+      font-size: 0.625rem; /* You can adjust the size to your preference */
+    }
+  }

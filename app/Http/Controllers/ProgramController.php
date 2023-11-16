@@ -15,6 +15,7 @@ use App\Models\Program;
 use App\Models\ProgramType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request as FacadesRequest;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,37 +41,110 @@ class ProgramController extends Controller
         ]);
     }
 
+    public function waitingRecommendation()
+    {
+        $perPage = FacadesRequest::input('perPage') ?: 5;
+        return Inertia::render('Admin/Programs/WaitingRecommendationIndex', [
+            'programs' => Program::query()
+                ->when(FacadesRequest::input('search'), function ($query, $search) {
+                    $query->where('name', 'like', "%{$search}%");
+                })
+                ->orderBy('id', 'desc')
+                ->with('status_id')
+                ->where('status', 1)
+                ->paginate($perPage)
+                ->withQueryString(),
+                'filters' => FacadesRequest::only(['search', 'perPage'])
+
+        ]);
+    }
+
+    public function programRecommendation(int $id): Response
+    {
+        $program = Program::with('allocation_id', 'program_type')->findOrFail($id);
+        $installmentPrograms = InstallmentPrograms::where('program_id', $id)->get();
+
+        return Inertia::render('Admin/Programs/ProgramRecommendation', [
+            'program' => $program,
+            'installmentPrograms' => $installmentPrograms
+        ]);    
+    }
+
+    public function approveRecommendation(int $id, Request $request)
+    {
+        $user = Auth::user();
+
+        try {
+            $single_program_id = explode(',', $id);
+
+            foreach ($single_program_id as $id) {
+                $program = Program::findOrFail($id);
+                $program->update([
+                    'status' => Program::STATUS_RECOMMENDED,
+                    'reject_reason' => '-'
+                ]);
+            }
+
+            $user->log("Web/Program/Recommendation", "Accept Recommendation");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
+        }
+    }
+
+    public function rejectRecommendation(Request $request,  int $id)
+    {
+        $user = Auth::user();
+
+        try {
+            $single_program_id = explode(',', $id);
+
+            foreach ($single_program_id as $id) {
+                    $program = Program::find($id);
+                    $program->update([
+                    'status' => Program::STATUS_REJECT,
+                    'reject_reason' => $request->reject_reason
+                ]);
+            }
+            $user->log("Web/Program/Recommendation", "Reject Recommendation");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
+        }
+    }
+
     public function create(): Response
     {
-        $this->authorize('create', Allocation::class);
         return Inertia::render('Admin/Programs/Create', [
             'programTypes' => ProgramTypeResource::collection(ProgramType::all()),
             'allocations' => AllocationResource::collection(Allocation::where('status', 3)->get()),
         ]);
     }
 
-
     public function store(CreateProgramRequest $requestProgram, CreateInstallmentRequest $requestInstallment): RedirectResponse
     {
-        $this->authorize('create', Program::class);
         $totalAmount = 0;
+        $user = Auth::user();
 
-        $program = new Program($requestProgram->validated());
-        $program->save();
-        $programId = $program->id;
+        try {
+            $program = new Program($requestProgram->validated());
+            $program->save();
+            $programId = $program->id;
+    
+            $data = $requestInstallment->only(['amount', 'installment_payment_date', 'allocation_rate', 'installment_name',  'type_id']);
+    
+            foreach ($data['amount'] as $index => $amount) {
+                InstallmentPrograms::create([
+                    'program_id' => $programId,
+                    'installment_payment_date' => $data['installment_payment_date'][$index],
+                    'installment_name' => $data['installment_name'][$index],
+                    'amount' => $amount,
+                ]);
+            }
 
-        $data = $requestInstallment->only(['amount', 'installment_payment_date', 'allocation_rate', 'installment_name',  'type_id']);
-        //dd($data);
-
-        foreach ($data['amount'] as $index => $amount) {
-            InstallmentPrograms::create([
-                'program_id' => $programId,
-                'installment_payment_date' => $data['installment_payment_date'][$index],
-                'installment_name' => $data['installment_name'][$index],
-                'amount' => $amount,
-            ]);
+            $user->log("Web/Program/Create", "Create Program");
+            return  to_route('programs.index');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
         }
-        return  to_route('programs.index');
     }
 
     public function storeInstallment(CreateInstallmentRequest $request): RedirectResponse
@@ -105,15 +179,9 @@ class ProgramController extends Controller
         return redirect()->route('programs.installment');
     }
 
-    public function show(string $id)
-    {
-        //
-    }
-
-
     public function edit(Program $program): Response
     {
-        $this->authorize('update', $program);
+        //$this->authorize('update', $program);
         return Inertia::render('Admin/Programs/Edit', [
             'program' => new ProgramResource($program),
             'allocations' => AllocationResource::collection(Allocation::all())
@@ -122,25 +190,42 @@ class ProgramController extends Controller
 
     public function update(CreateProgramRequest $request, Program $program): RedirectResponse
     {
-        $program->update([
-            'name'           => $request->name,
-            'type_id'        => $request->type_id,
-            'allocation'  => $request->allocation,
-            'allocation_rate' => $request->allocation_rate,
-            'latest_payment' => $request->latest_payment,
-            'valid_until'    => $request->valid_until,
-            'payment_date'   => $request->payment_date,
-            'frequency'      => $request->frequency,
-            'status'         => $request->status,
-        ]);
-        return to_route('programs.index');
+        $user = Auth::user();
+
+        try {
+            $program->update([
+                'name'           => $request->name,
+                'type_id'        => $request->type_id,
+                'allocation'  => $request->allocation,
+                'allocation_rate' => $request->allocation_rate,
+                'latest_payment' => $request->latest_payment,
+                'valid_until'    => $request->valid_until,
+                'payment_date'   => $request->payment_date,
+                'frequency'      => $request->frequency,
+                'status'         => $request->status,
+            ]);
+            $user->log("Web/Program/Update", "Update Program");
+            return to_route('programs.index');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
+        }
+
+
     }
 
     public function destroy(int $id)
     {
-        $program = Program::findOrFail($id);
-        $program->delete();
-        return back();
+        $user = Auth::user();
+
+        try {
+            $program = Program::findOrFail($id);
+            $program->delete();
+            $user->log("Web/Program/Index", "Delete Program");
+            return to_route('programs.index');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
+        }
+
     }
 
     public function programApproval(int $id): Response
@@ -165,8 +250,9 @@ class ProgramController extends Controller
                 })
                 ->orderBy('id', 'desc')
                 ->with('status_id')
-                ->where('status', 1)
-                ->paginate($perPage),
+                ->where('status', 2)
+                ->paginate($perPage)
+                ->withQueryString(),
                 'filters' => FacadesRequest::only(['search', 'perPage'])
 
         ]);
@@ -196,37 +282,56 @@ class ProgramController extends Controller
         ]);
     }
 
-
     public function approve(int $id, Request $request)
     {
-        $single_program_id = explode(',', $id);
+        $user = Auth::user();
 
-        foreach ($single_program_id as $id) {
-            $program = Program::findOrFail($id);
-            $totalReceiverCount = $program->receivers->where('status', 3)->count();
-            $program->update([
-                'status' => Program::STATUS_APPROVE,
-                'reject_reason' => '-'
-            ]);
+        try {
+            $single_program_id = explode(',', $id);
 
-            if ($program->type_id !== 1) {
-                Payment::create([
-                    'program_id' => $program->id,
-                    'total_receiver' => $totalReceiverCount,
-                    'status' => 1,
-                    'payment_date' => $request->payment_date
+            foreach ($single_program_id as $id) {
+                $program = Program::findOrFail($id);
+                $totalReceiverCount = $program->receivers->where('status', 3)->count();
+                $program->update([
+                    'status' => Program::STATUS_APPROVE,
+                    'reject_reason' => '-'
                 ]);
+    
+                if ($program->type_id !== 1) {
+                    Payment::create([
+                        'program_id' => $program->id,
+                        'total_receiver' => $totalReceiverCount,
+                        'status_id' => Payment::STATUS_REQUEST,
+                        'payment_date' => $program->payment_date
+                    ]);
+                }
             }
+
+            $user->log("Web/Program/Approval", "Approve Program");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
         }
     }
 
     public function reject(Request $request,  int $id)
     {
-        $program = Program::find($id);
-        $program->update([
-            'status' => Program::STATUS_REJECT,
-            'reject_reason' => $request->reject_reason
-        ]);
+        $user = Auth::user();
+
+        try {
+            $single_program_id = explode(',', $id);
+
+            foreach ($single_program_id as $id) {
+                    $program = Program::find($id);
+                    $program->update([
+                    'status' => Program::STATUS_REJECT,
+                    'reject_reason' => $request->reject_reason
+                ]);
+            }
+            $user->log("Web/Program/Approval", "Reject Program");
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred while creating the program');
+        }
     }
 
     public function export()

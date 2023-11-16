@@ -13,9 +13,13 @@ class StatusSeeder extends Seeder
      */
     public function run(): void
     {
-        Status::create(['name' => 'Processing']);
-        Status::create(['name' => 'Processed']);
+        Status::create(['name' => 'Submitted']);
+        Status::create(['name' => 'Recommended']);
         Status::create(['name' => 'Approved']);
         Status::create(['name' => 'Rejected']);
+        Status::create(['name' => 'Request']);
+        Status::create(['name' => 'Processing']);
+        Status::create(['name' => 'Proceed']);
+
     }
 }

@@ -16,6 +16,8 @@ import DangerButton from "@/Components/DangerButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import AddButton from "@/Components/AddButton.vue";
 
+import Content from "@/Components/Content.vue";
+
 // BreadCrumb
 import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
 import BreadcrumbActive from "@/Components/BreadcrumbActive.vue";
@@ -26,127 +28,63 @@ defineProps(['receivers'])
 const form = useForm({})
 
 
-// Delete Receiver
-const showConfirmDeleteModal = ref(false)
-const selectedId = ref(null);
-
-
-const confirmDelete = (id) => {
-    selectedId.value = id;
-    console.log(id)
-    showConfirmDeleteModal.value = true;
-}
-
-const closeModal = () => {
-    showConfirmDeleteModal.value = false;
-}
-
-const deleteReceiver = () => {
-    try{
-        form.delete(route('receivers.destroy', selectedId.value), {
-            onSuccess: (page) => {
-            Toast.fire({
-                icon: 'success',
-                title: 'Receiver has successfully Deleted'
-            })
-            },
-        })
-    }catch (err){
-        console.log(err)
-    }
-    showConfirmDeleteModal.value = false;
-};
-
-// Delete SweetAllert
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  width: 400,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  },
-});
-
-
-
-// Define the formatTimestamp method
-const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp); // Convert Unix timestamp to milliseconds
-    const formattedDate = date.toISOString().split('T')[0];
-    return formattedDate;
-}
-
-//getStatusText method 
-const getStatusText = (status) => {
-    switch (status) {
-        case 1:
-            return 'Sedang Diproses';
-        case 2:
-            return 'Telah Diproses';
-        case 3:
-            return 'Diluluskan';
-        case 4:
-            return 'Ditolak';
-        default:
-            return 'Unknown Status';
-    }
-};
-
-//getProgramTypeText method 
-const getTypeText = (type) => {
-    switch (type) {
-        case 1:
-            return 'Individu';
-        case 2:
-            return 'Kumpulan';
-        case 3:
-            return 'Pecahan';
-        case 4:
-            return 'Kelompok';
-        default:
-            return 'Unknown Status';
-    }
-};
-
-
 </script>
 
 <template>
     <Head title="Payments" />
 
     <AdminLayout>
-        <div class="py-12">
+        <div class="mt-14">
             <div class="w-full mx-auto">
                 <div class="overflow-hidden">
-                    <div class="flex justify-between mt-2">
-                        <div class="flex items-center">
-                            <span
-                                v-if="receivers.data.length > 0"
-                                class="font-bold text-black text-xl mr-1">
-                                Requires processing - Program {{ receivers.data[0].program.name }}
-                            </span>
-                        </div>
-
+                    <div class="flex justify-between pt-4">
                         <nav class="text-sm font-semibold" aria-label="Breadcrumb">
                             <ol class="list-none p-0 inline-flex">
                                 <li class="flex items-center">
-                                    <BreadcrumbInitial :href="route('payments.index')">Home</BreadcrumbInitial>
+                                    <BreadcrumbInitial :href="route('payments.index')"></BreadcrumbInitial>
                                 </li>
                                 <li class="flex items-center">
-                                    <BreadcrumbActive :href="route('payments.index')">Requires Processing</BreadcrumbActive>
+                                    <BreadcrumbActive :href="route('payments.index')">Payment</BreadcrumbActive>
                                 </li>
                                 <li class="flex items-center">
-                                    <BreadcrumbCurrent>Payment</BreadcrumbCurrent>
+                                    <BreadcrumbActive :href="route('payments.index')">Request</BreadcrumbActive>
+                                </li>
+                                <li class="flex items-center">
+                                    <BreadcrumbCurrent>Receiver List</BreadcrumbCurrent>
                                 </li>
                             </ol>
                         </nav>
                     </div>
+                    <Content>
+                        <div class="flex justify-between mt-1 mb-3">
+                            <span class="font-medium text-primary-text text-lg mt-1.5">
+                                Program : {{ receivers.data[0].program.name }}
+                            </span>
+                        </div>
+                    
+                        <div class="border-b-2 border-gray-200 mb-2"></div>
 
-                    <div class="mt-2">
+                        <div class="mb-2 flex justify-between">
+                            <BsSearch class="absolute ml-2 text-sm text-gray-500 mt-2" />
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Search"
+                                class="pl-7 w-1/3 rounded-md bg-primary-50 text-xs border-none focus:ring-primary-100"
+                            />
+
+                            <select
+                                v-model="perPage"
+                                @change="getAllocations"
+                                class="rounded-md bg-primary-50 text-xs border-none focus:ring-primary-100">
+                                <option value="1">10</option>
+                                <option value="2">20</option>
+                                <option value="5">50</option>
+                                <option value="10">100</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-2">
                         <Table>
                             <template #header>
                                 <TableRow>
@@ -162,7 +100,7 @@ const getTypeText = (type) => {
                             <template #default>
                                 <TableRow v-for="receiver in receivers.data" :key="receiver.id" class="border-b">
                                     <TableDataCell>{{ receiver.id }}</TableDataCell>
-                                    <TableDataCell>{{ receiver.id }}</TableDataCell>
+                                    <TableDataCell>{{ receiver.program.payment_date }}</TableDataCell>
                                     <TableDataCell>{{ receiver.name }}</TableDataCell>
                                     <TableDataCell>{{ receiver.program.name }}</TableDataCell>
                                     <TableDataCell>{{ receiver.bank.name }}</TableDataCell>
@@ -175,6 +113,7 @@ const getTypeText = (type) => {
                             <TablePagination :links="receivers.links" />
                         </div>
                     </div>
+                    </Content>
                 </div>
             </div>
         </div>

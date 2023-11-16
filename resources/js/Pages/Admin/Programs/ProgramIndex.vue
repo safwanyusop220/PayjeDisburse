@@ -17,6 +17,11 @@ import DangerButton from "@/Components/DangerButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import AddButton from "@/Components/AddButton.vue";
 
+import SpanSubmittedStatus from "@/Components/SpanSubmittedStatus.vue";
+import SpanRecommendedStatus from "@/Components/SpanRecommendedStatus.vue";
+import SpanApprovedStatus from "@/Components/SpanApprovedStatus.vue";
+import SpanRejectedStatus from "@/Components/SpanRejectedStatus.vue";
+
 import Content from "@/Components/Content.vue";
 
 // BreadCrumb
@@ -27,7 +32,6 @@ import BreadcrumbCurrent from "@/Components/BreadcrumbCurrent.vue";
 // Icons
 import { BsSearch } from "@kalimahapps/vue-icons";
 
-//defineProps(['programs'])
 const props = defineProps({
     programs: {
         type: Object,
@@ -38,7 +42,6 @@ const props = defineProps({
 
 const form = useForm({})
 
-// Delete Allocation
 const showConfirmDeleteModal = ref(false)
 const selectedId = ref(null);
 
@@ -69,8 +72,6 @@ const deleteReceiver = () => {
     showConfirmDeleteModal.value = false;
 };
 
-// Toast Delete
-// Delete SweetAllert
 const Toast = Swal.mixin({
   toast: true,
   position: 'top-end',
@@ -86,40 +87,28 @@ const Toast = Swal.mixin({
 
 
 
-// Define the formatTimestamp method
 const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp); // Convert Unix timestamp to milliseconds
-    const formattedDate = date.toISOString().split('T')[0];
-    return formattedDate;
+  const date = new Date(timestamp);
+
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const year = date.getFullYear().toString().slice(-2);
+
+  const formattedDate = `${day}/${month}/${year}`;
+
+  return formattedDate;
 }
 
-//getStatusText method 
-const getStatusText = (status) => {
-    switch (status) {
-        case 1:
-            return 'Sedang Diproses';
-        case 2:
-            return 'Telah Diproses';
-        case 3:
-            return 'Diluluskan';
-        case 4:
-            return 'Ditolak';
-        default:
-            return 'Unknown Status';
-    }
-};
-
-//getProgramTypeText method 
 const getTypeText = (type) => {
     switch (type) {
         case 1:
-            return 'Individu';
+            return 'Individual';
         case 2:
-            return 'Kumpulan';
+            return 'Group';
         case 3:
-            return 'Pecahan';
+            return 'Schedule';
         case 4:
-            return 'Kelompok';
+            return 'Batch';
         default:
             return 'Unknown Status';
     }
@@ -168,14 +157,13 @@ function getPrograms() {
                     </nav>
                 </div>
                 <Content>
-                    <div class="flex justify-between mt-1 mb-3">
-                        <span class="font-medium text-primary-text text-lg mt-1.5">Programs</span>
-                        <div class="flex justify-end">
-                            <AddButton :href="route('programs.create')">Create</AddButton>
-                        </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-primary-text text-lg mt-2">Programs</span>
+
+                        <AddButton :href="route('programs.create')">Create</AddButton>
                     </div>
 
-                    <div class="border-b-2 border-gray-200 mb-2"></div>
+                    <div class="border-b-2 border-gray-200 mb-2 mt-2.5"></div>
 
                     <div class="mb-2 flex justify-between">
                         <BsSearch class="absolute ml-2 text-sm text-gray-500 mt-2" />
@@ -189,7 +177,7 @@ function getPrograms() {
                         <select
                             v-model="perPage"
                             @change="getPrograms"
-                            class="rounded-md bg-primary-50 text-xs border-none focus:ring-primary-100">
+                            class="rounded-md bg-primary-50 text-primary-500 text-xs border-none focus:ring-primary-100">
                             <option value="1">10</option>
                             <option value="2">20</option>
                             <option value="5">50</option>
@@ -205,38 +193,33 @@ function getPrograms() {
                                     <TableHeaderCell>Date Created</TableHeaderCell>
                                     <TableHeaderCell>Program Name</TableHeaderCell>
                                     <TableHeaderCell>Program Type</TableHeaderCell>
-                                    <TableHeaderCell>Approval Status</TableHeaderCell>
+                                    <TableHeaderCell  class="text-center">Status</TableHeaderCell>
                                     <TableHeaderCell>Allocation Rate</TableHeaderCell>
                                     <TableHeaderCell>Latest Payment</TableHeaderCell>
                                     <TableHeaderCellRight>Action</TableHeaderCellRight>
                                 </TableRow>
                             </template>
                             <template #default>
-                                <TableRow v-for="program in programs.data" :key="program.id" class="border-b">
-                                    <TableDataCell>{{ program.id }}</TableDataCell>
+                                <TableRow v-for="(program, index) in programs.data" :key="program.id" class="border-b">
+                                    <TableDataCell>{{ index + 1 }}</TableDataCell>
                                     <TableDataCell>{{ formatTimestamp(program.created_at) }}</TableDataCell>
                                     <TableDataCell>{{ program.name }}</TableDataCell>
                                     <TableDataCell>{{ getTypeText(program.type_id) }}</TableDataCell>
-                                    <TableDataCell>
+                                    <TableDataCell class="flex justify-center">
                                         <template v-if="program.status == 1">
-                                            <span class="bg-blue-100 text-blue-800 text-xs font-normal mr-2 px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
-                                            {{ program.status_id.name }}
-                                            </span>
+                                            <SpanSubmittedStatus :value="program.status_id.name"/>
+                                        </template>
+                                        <template v-if="program.status == 2">
+                                            <SpanRecommendedStatus :value="program.status_id.name"/>
                                         </template>
                                         <template v-if="program.status == 3">
-                                            <span class="bg-green-100 text-green-800 text-xs font-normal mr-2 px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
-                                                {{ program.status_id.name }}
-                                            </span>
-                                        </template> <template v-if="program.status == 4">
-                                            <span class="bg-red-100 text-red-800 text-xs font-normal mr-2 px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">
-                                                {{ program.status_id.name }}
-                                            </span>
-                                        </template>                                      
+                                            <SpanApprovedStatus :value="program.status_id.name"/>
+                                        </template>
+                                        <template v-if="program.status == 4">
+                                            <SpanRejectedStatus :value="program.status_id.name"/>
+                                        </template>
                                     </TableDataCell>
                                     <TableDataCell>RM {{ program.allocation_rate }}</TableDataCell>
-                                    <!---<TableDataCell> {{ allocation.allocation_balance === null ? '-' : 'RM '+ allocation.allocation_balance }}
-
-                                    </TableDataCell>-->
                                     <TableDataCell>{{ program.latest_payment !== null ? program.latest_payment : '-' }}</TableDataCell>                                    
                                     <TableDataCell class="space-x-4">
                                         <div class="row">
@@ -254,23 +237,23 @@ function getPrograms() {
                                             </div>
                                         </div>
                                     </TableDataCell>
-                                        <!--Delete Receiver-->
-                                        <Modal :show="showConfirmDeleteModal" @close="closeModal">
-                                            <div class="p-6">
-                                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                                </svg>
-                                                <div class="flex justify-center">
-                                                    <h2 class="text-lg font-semibold text-slate-800">
-                                                    Are you sure you want to delete this Programs?
-                                                    </h2>
-                                                </div>
-                                                <div class="mt-6 flex justify-center space-x-2">
-                                                    <DangerButton @click="deleteReceiver" class="text-xs font-extralight py-3">Yes, I'm sure</DangerButton>
-                                                    <SecondaryButton @click="closeModal" class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
-                                                </div>
+                                    <!--Delete Receiver-->
+                                    <Modal :show="showConfirmDeleteModal" @close="closeModal">
+                                        <div class="p-6">
+                                            <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                            </svg>
+                                            <div class="flex justify-center">
+                                                <h2 class="text-lg font-semibold text-slate-800">
+                                                Are you sure you want to delete this Programs?
+                                                </h2>
                                             </div>
-                                        </Modal>
+                                            <div class="mt-6 flex justify-center space-x-2">
+                                                <DangerButton @click="deleteReceiver" class="text-xs font-extralight py-3">Yes, I'm sure</DangerButton>
+                                                <SecondaryButton @click="closeModal" class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
+                                            </div>
+                                        </div>
+                                    </Modal>
                                 </TableRow>
                             </template>
                         </Table>

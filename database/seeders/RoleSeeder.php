@@ -13,6 +13,8 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::create(['name' => 'admin', 'description' => 'Admin Sistem']);
+        Role::create(['name' => 'Super Admin', 'description' => 'Highest level administrator']);
+        Role::create(['name' => 'Recommender', 'description' => 'Recommend all applications with a submitted status']);
+        Role::create(['name' => 'Approver', 'description' => 'Approve all applications with a submitted status']);
     }
 }

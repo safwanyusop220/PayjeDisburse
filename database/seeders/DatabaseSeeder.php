@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
-
+        $this->call(GroupSeeder::class);
         $this->call(RoleSeeder::class);
         $this->call(AdminSeeder::class);
         $this->call(ReferenceBankSeeder::class);
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AllocationSeeder::class);
         $this->call(PermissionSeeder::class);
         $this->call(ProgramTypeSeeder::class);
-        //$this->call(ProgramSeeder::class);
+        $this->call(ProgramSeeder::class);
         //$this->call(ReceiverSeeder::class);
         //$this->call(PaymentSeeder::class);
 

@@ -23,10 +23,10 @@ class CreateAllocationRequest extends FormRequest
     {
         return [
             'allocation_source' => ['required', 'string'],
-            'total_allocation' => ['required', 'decimal:2'],
-            'reject_reason' => ['string', 'max:255'],
-            'bank' => ['integer', 'max:255'],
-            'account_number' => ['string', 'max:255'],
+            'total_allocation'  => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'numeric', 'max:999999999'],
+            'reject_reason'     => ['string', 'max:255'],
+            'bank'              => ['integer', 'max:255'],
+            'account_number'    => ['string', 'max:255'],
 
         ];
     }

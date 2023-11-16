@@ -30,6 +30,9 @@ import SuccessButton from "@/Components/SuccessButton.vue";
 import BackButton from "@/Components/BackButton.vue";
 import Dropdown from '@/Components/Dropdown.vue';
 
+import TextInputXxs from '@/Components/TextInputXxs.vue';
+import TextInputMoneyXxs from '@/Components/TextInputMoneyXxs.vue';
+
 // BreadCrumb
 import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
 import BreadcrumbActive from "@/Components/BreadcrumbActive.vue";
@@ -42,6 +45,10 @@ import { BxCheckDouble } from "@kalimahapps/vue-icons";
 import { BsBookmarkPlusFill } from "@kalimahapps/vue-icons";
 import { ReDeleteBinFill } from "@kalimahapps/vue-icons";
 import { ReDeleteBin5Line } from "@kalimahapps/vue-icons";
+import { AkCircleCheckFill } from "@kalimahapps/vue-icons";
+import { AkCircleCheck } from "@kalimahapps/vue-icons";
+import { FaCircleDot } from "@kalimahapps/vue-icons";
+import { ClCircleWarning } from "@kalimahapps/vue-icons";
 
 const props = defineProps({
     program: {
@@ -55,8 +62,6 @@ const props = defineProps({
     allocations: Array
 })
 
-
-
 const form = useForm({
     name: "",
     type_id: "",
@@ -64,14 +69,14 @@ const form = useForm({
     allocation_rate: "",
     latest_payment: "",
     payment_date: "",
-    total_month: null,
-    total_year: null,
+    total_month: "",
+    total_year: "",
     frequency: "",
     end_date: props.program?.end_date,
     program_id : props.program?.program_id,
     amount: [],
     installment_payment_date: [],
-    installment_name: []
+    installment_name: [],
 })
 
 watch(
@@ -79,10 +84,52 @@ watch(
     () => {
         form.end_date = props.program?.end_date
     }
-
 );
 
-const showConfirmCreateAllocationModal = ref(false)
+const isFormValid = computed(() => {
+  const nameError = form.name === '';
+  const typeIdError = form.type_id === '';
+  const allocationError = form.allocation === '';
+  const allocationRateError = form.allocation_rate === '';
+  const paymentDateError = form.payment_date === '';
+  const frequencyError = form.frequency === '';
+  const totalMonthError = form.total_month === '';
+  const endDateError = form.end_date === '';
+  const totalYearError = form.total_year === '';
+
+  if(form.type_id == 1){
+    return !nameError && !typeIdError && !allocationError && !allocationRateError && !paymentDateError;
+  }
+  if(form.type_id == 2 && form.frequency == 5)
+  {
+    return !nameError && !typeIdError && !allocationError && !allocationRateError && !paymentDateError && !frequencyError 
+    && !totalMonthError;
+  }
+  if(form.type_id == 2 && form.frequency == 6)
+  {
+    return !nameError && !typeIdError && !allocationError && !allocationRateError && !paymentDateError && !frequencyError 
+    && !totalYearError;
+  }
+  if(form.type_id == 2)
+  {
+    return !nameError && !typeIdError && !allocationError && !allocationRateError && !paymentDateError && !frequencyError;
+  }
+//   if(form.type_id == 3){
+//     return !nameError && !typeIdError && !allocationError && !allocationRateError && !amountError && !installmentPaymentDateError;
+//   }
+if(form.type_id == 3){
+    return !nameError && !typeIdError && !allocationError && !allocationRateError;
+}
+
+if(form.type_id == 4){
+    return !nameError && !typeIdError && !allocationError && !allocationRateError;
+}
+
+
+});
+
+
+const showConfirmCreateModal = ref(false)
 
 const create = () => {  
     const getEndDate = document.getElementById('end_date')
@@ -90,15 +137,14 @@ const create = () => {
     if(getEndDate){
         form.end_date = getEndDate.value;
     }
-//if(test){
-// console.log(test.value);
-//}
-    showConfirmCreateAllocationModal.value = true;
+    if (isFormValid.value) {
+        showConfirmCreateModal.value = true;
+  }
 };
 
 
 const closeModalCreate = () => {
-    showConfirmCreateAllocationModal.value = false;
+    showConfirmCreateModal.value = false;
 }
 
 const createProgram = (id) => {
@@ -108,11 +154,19 @@ const createProgram = (id) => {
         form.installment_name = inputs.value.map(input => input.installment_name);
         form.post(route('programs.store'), {
             onSuccess: (page) => {
-            Toast.fire({
+            Swal.fire({
+                width: 400,
+                height: 100,
+                html: '<span class="text-sm">Allocation Has Successfully Been Created!</span>',
                 icon: 'success',
-                title: 'Program has successfully approved',
-            })
-            },
+                confirmButtonText: 'Okay',
+                customClass: {
+                    content: 'text-lg',
+                    confirmButton: 'px-4 py-2 text-white text-xs rounded',
+                }
+            });
+        },
+
         })
     }catch (err){
         console.log(err)
@@ -134,10 +188,10 @@ const Toast = Swal.mixin({
 
 
 const programTypes = ref([
-      { id: 1, name: 'Individu' },
-      { id: 2, name: 'Kumpulan' },
-      { id: 3, name: 'Pecahan' },
-      { id: 4, name: 'Kelompok' },
+      { id: 1, name: 'Individual', description:"Please specify allocation information for the recipient's details" },
+      { id: 2, name: 'Group', description:"The allocation rate is uniform for all recipients within the same group" },
+      { id: 3, name: 'Schedule' },
+      { id: 4, name: 'Batch' },
     ]);
     
 const showIndividu = ref(false);
@@ -248,7 +302,19 @@ const removeInput = (index) => {
   inputs.value.splice(index, 1);
 };
 
-
+const config = {
+  spinner: false,
+  step: 10,
+  min: 0,
+  max: 9999999999,
+  precision: 2,
+  decimal: ".",
+  thousands: ",",
+  masked: false,
+  disableNegative: true,
+  align: "start",
+  prefix: "RM "
+};
 </script>
 
 <template>
@@ -280,16 +346,16 @@ const removeInput = (index) => {
                                 <InputLabel class="mt-1.5" value="Program Name" />
                             </div>
                             <div class="col-span-10">
-                                <TextInput
+                                <TextInputXxs
                                     id="name"
                                     type="text"
-                                    class=" block w-1/2 text-xs"
+                                    class=" block w-1/3 text-xs"
                                     v-model="form.name"
                                     autofocus
                                     autocomplete="username"
                                     placeholder="Program A"
                                 />
-
+                                <div v-if="form.name === ''" class="text-red-500 text-xxs-custom ml-2">* Program Name is required</div>
                                 <InputError class="mt-2" :message="form.errors.name" />
                             </div>
                         </div>
@@ -308,10 +374,10 @@ const removeInput = (index) => {
                                                 :id="programType.id"
                                                 v-model="form.type_id"
                                                 :value="programType.id"
-                                                class="mr-2 cursor-pointer"
+                                                class="mr-2 mb-1 cursor-pointer focus:ring-transparent"
                                                 @click="variable(programType.id)"
                                             />
-                                            <label :for="programType.id" class="text-sm">{{ programType.name }}</label>
+                                            <label :for="programType.id" class="text-xxs mb-1">{{ programType.name }}</label>
                                         </div>
                                     </template>
                                 </div>
@@ -327,52 +393,53 @@ const removeInput = (index) => {
                                 </div>
                                 
                                 <div class="col-span-10">
-                                    <div class="my-3">
-                                        <select class="rounded-md text-xs border border-gray-300 w-1/2" v-model="form.allocation" id="allocation">
-                                            <option value="">Choose Allocation</option>
-                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}</option>
+                                    <div class="mt-3">
+                                        <select class="h-[30px] text-primary-700 border-none bg-primary-50 text-xs rounded-xl w-1/3" v-model="form.allocation" id="allocation">
+                                            <option value="" disabled>Choose Allocation</option>
+                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}
+                                            </option>
                                         </select>
+
+                                        <div v-if="form.allocation === ''" class="text-red-500 text-xxs-custom">* Allocation source is required</div>
+                                        <InputError class="mt-2" :message="form.errors.allocation" />
                                     </div>
                                 </div>
                             </div>
                             <!--Allocation Rate-->
-                            <div class="grid grid-cols-12 mb-4">
+                            <div class="grid grid-cols-12">
                                 <div class="col-span-2">
-                                    <InputLabel class="mt-2" value="Allocation Rate" />
+                                    <InputLabel class="mt-4" value="Allocation Rate" />
                                 </div>
                                 
-                                <div class="col-span-10">
-                                    <TextInput
-                                        id="allocation_rate"
-                                        type="number"
-                                        class="mt-1 block w-1/2 text-xs"
+                                <div class="col-span-10 w-1/3">
+                                    <v-money-spinner
+                                        id="total_allocation"
+                                        class="mt-3 rounded-xl text-xs bg-primary-50 block border border-none focus:ring-0 text-primary-700 focus:ring-primary-50 focus:border-blue-500"
                                         v-model="form.allocation_rate"
-                                        required
-                                    />
+                                        v-bind="config">
+                                    </v-money-spinner>
 
+                                    <div v-if="form.allocation_rate === ''" class="text-red-500 text-xxs-custom">* Allocation Rate is required</div>
                                     <InputError class="mt-2" :message="form.errors.allocation_rate" />
                                 </div>
                             </div>
                             <!--Payment Date-->
                             <div class="grid grid-cols-12">
                                 <div class="col-span-2">
-                                    <InputLabel class="mt-2" value="Payment Date" />
+                                    <InputLabel class="mt-4" value="Payment Date" />
                                 </div>
                                 
                                 <div class="col-span-10">
-                                    <TextInput
+                                    <TextInputXxs
                                         id="payment_date"
                                         type="date"
-                                        class="mt-1 block w-1/2 text-xs"
+                                        class="mt-3 block w-1/3 text-xs"
                                         v-model="form.payment_date"
-                                        required
                                     />
-
+                                    <div v-if="form.payment_date === ''" class="text-red-500 text-xxs-custom">* Payment date is required</div>
                                     <InputError class="mt-2" :message="form.errors.payment_date" />
                                 </div>
                             </div>
-
-                            <!--<p class="text-xs font-bold mt-20">Nota: Sila tetapkan maklumat peruntukan yang lain pada maklumat penerima</p>-->
                         </div>
 
                         <!--Textfield based on program type Kumpulan-->
@@ -384,29 +451,33 @@ const removeInput = (index) => {
                                 </div>
                                 
                                 <div class="col-span-10">
-                                    <div class="my-3">
-                                        <select class="rounded-md text-xs border border-gray-300 w-1/2" v-model="form.allocation" id="allocation">
-                                            <option value="">Choose Allocation</option>
-                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}</option>
+                                    <div class="mt-3">
+                                        <select class="h-[30px] text-primary-700 border-none bg-primary-50 text-xs rounded-lg w-1/3" v-model="form.allocation" id="allocation">
+                                            <option value="" disabled>Choose Allocation</option>
+                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}
+                                            </option>
                                         </select>
+
+                                        <div v-if="form.allocation === ''" class="text-red-500 text-xxs-custom">* Allocation source is required</div>
+                                        <InputError class="mt-2" :message="form.errors.allocation" />
                                     </div>
                                 </div>
                             </div>
                             <!--Allocation Rate-->
-                            <div class="grid grid-cols-12 mb-4">
+                            <div class="grid grid-cols-12 mb-3">
                                 <div class="col-span-2">
                                     <InputLabel class="mt-2" value="Allocation Rate" />
                                 </div>
                                 
-                                <div class="col-span-10">
-                                    <TextInput
-                                        id="allocation_rate"
-                                        type="number"
-                                        class="mt-1 block w-1/2 text-xs"
+                                <div class="col-span-10  w-1/3">
+                                    <v-money-spinner
+                                        id="total_allocation"
+                                        class="mt-3 rounded-xl text-xs bg-primary-50 block border border-none focus:ring-0 text-primary-700 focus:ring-primary-50 focus:border-blue-500"
                                         v-model="form.allocation_rate"
-                                        required
-                                    />
+                                        v-bind="config">
+                                    </v-money-spinner>
 
+                                    <div v-if="form.allocation_rate === ''" class="text-red-500 text-xxs-custom">* Allocation rate is required</div>
                                     <InputError class="mt-2" :message="form.errors.allocation_rate" />
                                 </div>
                             </div>
@@ -419,7 +490,7 @@ const removeInput = (index) => {
                                 <div class="col-span-10">
                                     <div class="grid grid-cols-7">
                                         <div class="col-span-1">
-                                            <div class="mb-4">
+                                            <div class="">
                                                 <template v-for="frequency in frequencies" :key="frequency.id">
                                                     <div class="flex items-center" >
                                                         <input
@@ -428,21 +499,23 @@ const removeInput = (index) => {
                                                             :id="frequency.id"
                                                             v-model="form.frequency"
                                                             :value="frequency.id"
-                                                            class="mr-2 mb-1 cursor-pointer"
+                                                            class="mr-2 mb-1 cursor-pointer focus:ring-transparent"
                                                             @click="variable(frequency.id)"
                                                         />
-                                                        <label :for="frequency.id" class="text-xs mb-1 font-medium">{{ frequency.name }}</label>
+                                                        <label :for="frequency.id" class="text-xxs mb-1 font-normal">{{ frequency.name }}</label>
                                                     </div>
                                                 </template>
+                                                <div v-if="form.frequency === ''" class="text-red-500 text-xxs-custom">* Frequency is required</div>
+                                                <InputError class="mt-2" :message="form.errors.frequency" />
                                             </div>
                                         </div>
                                         <!--Small note for Kekerapan-->
                                         <div class="col-span-6">
                                             <div v-if="form.frequency == 5">
-                                                <p class="text-xxs-custom font-bold mt-0.5 -ml-9" v-if="form.payment_date">(Every {{ getDayWithSuffix }} of the month)</p>
+                                                <p class="text-xxs-custom font-bold -ml-14" v-if="form.payment_date">(Every {{ getDayWithSuffix }} of the month)</p>
                                             </div>
                                             <div v-if="form.frequency == 6">
-                                                <p class="text-xxs-custom font-bold mt-5 -ml-12" v-if="form.payment_date">(Every {{ getSelectedMonth }} {{ getDayWithSuffix }})</p>
+                                                <p class="text-xxs-custom font-bold mt-5 -ml-16" v-if="form.payment_date">(Every {{ getSelectedMonth }} {{ getDayWithSuffix }})</p>
                                             </div>
                                         </div>
                                     </div>
@@ -450,54 +523,55 @@ const removeInput = (index) => {
                                 </div>
                             </div>
                             <!--Date Payment-->
-                            <div class="grid grid-cols-12 mb-2">
+                            <div class="grid grid-cols-12 mt-1">
                                 <div class="col-span-2">
                                     <InputLabel class="mt-2" value="Date Payment" />
                                 </div>
                                 
                                 <div class="col-span-10">
-                                    <TextInput
+                                    <TextInputXxs
                                         id="payment_date"
                                         type="date"
-                                        class="mt-1 block w-1/2 text-xs"
+                                        class="mt-1 block w-1/3 text-xs"
                                         v-model="form.payment_date"
-                                        required
                                     />
+                                    <div v-if="form.payment_date === ''" class="text-red-500 text-xxs-custom">* Payment date is required</div>
                                     <InputError class="mt-2" :message="form.errors.payment_date" />
                                 </div>
                             </div>
                             <!--Month Selected-->
                             <div v-if="form.frequency == 5">
                                 <!--Total Month-->
-                                <div  class="grid grid-cols-12 mb-2">
+                                <div  class="grid grid-cols-12 mt-2">
                                     <div class="col-span-2">
                                         <InputLabel class="mt-2" value="Total Month" />
                                     </div>
                                     
                                     <div class="col-span-10">
-                                        <TextInput
+                                        <TextInputXxs
                                             id="valid_until"
                                             type="number"
-                                            class="mt-1 block w-1/2 text-xs"
+                                            class="mt-1 block w-1/3 text-xs"
                                             v-model="form.total_month"
-                                            required
                                         />
+                                        <div v-if="form.total_month === ''" class="text-red-500 text-xxs-custom">* Total month is required</div>
                                         <InputError class="mt-2" :message="form.errors.total_month" />
                                     </div>
                                 </div>
                                 <!--End Date-->
-                                <div class="grid grid-cols-12">
+                                <div class="grid grid-cols-12 mt-2">
                                     <div class="col-span-2">
                                         <InputLabel class="mt-2" value="End Date" />
                                     </div>
 
                                     <div class="col-span-10">
-                                        <TextInput
+                                        <TextInputXxs
                                             id="end_date"
-                                            type="date"
-                                            class="mt-1 block w-1/2 text-xs"
+                                            type="text"
+                                            class="mt-1 block w-1/3 text-xs"
                                             v-model="form.end_date"
                                             :value="calculateEndDate"
+                                            disabled
                                         />
                                     </div>
                                 </div>
@@ -505,36 +579,39 @@ const removeInput = (index) => {
                             <!--Year Selected-->
                             <div v-if="form.frequency == 6">
                                 <!--Total Year-->
-                                <div class="grid grid-cols-12 mb-2">
+                                <div class="grid grid-cols-12 mt-2">
                                     <div class="col-span-2">
                                         <InputLabel class="mt-2" value="Total Year" />
                                     </div>
                                     
                                     <div class="col-span-10">
-                                        <TextInput
+                                        <TextInputXxs
                                             id="valid_until"
                                             type="number"
-                                            class="mt-1 block w-1/2 text-xs"
+                                            class="mt-1 block w-1/3 text-xs"
                                             v-model="form.total_year"
-                                            required
                                         />
+                                        <div v-if="form.total_year === ''" class="text-red-500 text-xxs-custom">* Total year is required</div>
                                         <InputError class="mt-2" :message="form.errors.total_year" />
                                     </div>
                                 </div>
                                 <!--End Date-->
-                                <div class="grid grid-cols-12">
+                                <div class="grid grid-cols-12 mt-2">
                                     <div class="col-span-2">
                                         <InputLabel class="mt-2" value="End Date" />
                                     </div>
 
                                     <div class="col-span-10">
-                                        <TextInput
+                                        <TextInputXxs
                                             id="end_date"
                                             type="date"
                                             v-model="form.end_date"
-                                            class="mt-1 block w-1/2 text-xs"
+                                            class="mt-1 block w-1/3 text-xs"
                                             :value="calculateEndDateYear"
+                                            disabled
                                         />
+                                        <div v-if="form.end_date === ''" class="text-red-500 text-xxs-custom">* End date is required</div>
+                                        <InputError class="mt-2" :message="form.errors.end_date" />
                                     </div>
                                 </div>
                             </div>
@@ -543,46 +620,49 @@ const removeInput = (index) => {
                         <!--Textfield based on program type Pecahan-->
                         <div v-if="showPecahan">
                             <!--Allocation Source-->
-                            <div class="grid grid-cols-12">
+                            <div class="grid grid-cols-12 mt-3">
                                 <div class="col-span-2">
-                                    <InputLabel class="mt-4" value="Allocation Source" />
+                                    <InputLabel class="" value="Allocation Source" />
                                 </div>
                                 
                                 <div class="col-span-10">
-                                    <div class="my-3">
-                                        <select class="rounded-lg text-xs border border-gray-300 w-1/2" v-model="form.allocation" id="allocation">
-                                            <option value="">Choose Allocation</option>
-                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}</option>
+                                    <div class="">
+                                        <select class="h-[30px] text-primary-700 border-none bg-primary-50 text-xs rounded-xl w-1/3" v-model="form.allocation" id="allocation">
+                                            <option value="" disabled>Choose Allocation</option>
+                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}
+                                            </option>
                                         </select>
+
+                                        <div v-if="form.allocation === ''" class="text-red-500 text-xxs-custom">* Allocation source is required</div>
+                                        <InputError class="mt-2" :message="form.errors.allocation" />
                                     </div>
                                 </div>
                             </div>
                             <!--Allocation Rate-->
-                            <div class="grid grid-cols-12 mb-4">
+                            <div class="grid grid-cols-12 mt-3">
                                 <div class="col-span-2">
-                                    <InputLabel class="mt-2" value="Allocation Rate" />
+                                    <InputLabel value="Allocation Rate" />
                                 </div>
                                 
-                                <div class="col-span-10">
-                                    <TextInput
-                                        id="allocation_rate"
-                                        type="number"
-                                        class="mt-1 block w-1/2 text-xs"
+                                <div class="col-span-10  w-1/3">
+                                    <v-money-spinner
+                                        id="total_allocation"
+                                        class="rounded-xl text-xs bg-primary-50 block border border-none focus:ring-0 text-primary-700 focus:ring-primary-50 focus:border-blue-500"
                                         v-model="form.allocation_rate"
-                                        required
-                                        style="appearance: textfield; -webkit-appearance: textfield;"
-                                    />
+                                        v-bind="config">
+                                    </v-money-spinner>
 
+                                    <div v-if="form.allocation_rate === ''" class="text-red-500 text-xxs-custom">* Allocation rate is required</div>
                                     <InputError class="mt-2" :message="form.errors.allocation_rate" />
                                 </div>
                             </div>
                             <!--Payment Installment-->
-                            <div class="grid grid-cols-12 mt-8">
+                            <div class="grid grid-cols-12 mt-3">
                                     <div class="col-span-2">
                                         <InputLabel class="mt-2" value="Payment Installment" />
                                     </div>
 
-                                    <div class="col-span-5 flex justify-end">
+                                    <div class="col-span-4 flex justify-end">
                                         <button class="py-1 px-1.5 text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md" @click.prevent="addInput">
                                             <div class="flex items-center">
                                                 <span class=" text-xxs-custom">Add</span>
@@ -598,11 +678,23 @@ const removeInput = (index) => {
                                 <div class="col-span-10">
                                     <div class="mt-2">
                                         <div v-for="(input, index) in inputs" :key="index">
-                                            <input v-model="input.installment_payment_date" required type="date" class="w-1/6 mr-2.5 border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                                            <input v-model="input.amount" required type="number" class="w-1/4  border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                                            <button  type="button" class="bg-danger-button hover:bg-danger-button-hover rounded-md text-white px-1.5 py-1.5 m-2 ml-5 text-xs" @click="removeInput(index)">
-                                            <ReDeleteBin5Line class="text-sm"/>
-                                            </button>
+                                            <div class="flex">
+                                                <TextInputXxs v-model="input.installment_payment_date" type="date" class="mb-2 w-1/6 mr-2.5 border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+
+                                                <div>
+                                                    <v-money-spinner
+                                                    id="total_allocation"
+                                                    class="w-[125px] rounded-xl text-xs bg-primary-50 block border border-none focus:ring-0 text-primary-700 focus:ring-primary-50 focus:border-blue-500"
+                                                    v-model="input.amount"
+                                                    v-bind="config">
+                                                    </v-money-spinner>
+                                                </div>
+                                                <div class="my-auto">
+                                                    <button  type="button" class="bg-danger-button hover:bg-danger-button-hover rounded-md text-white py-1.5 px-1.5 ml-7 mb-2 text-xs" @click="removeInput(index)">
+                                                        <ReDeleteBin5Line class="text-sm"/>
+                                                    </button>
+                                                </div>
+                                            </div> 
                                         </div>
                                     </div>
                                 </div>
@@ -612,46 +704,49 @@ const removeInput = (index) => {
                         <!--Textfield based on program type Kelompok-->
                         <div v-if="showKelompok">
                             <!--Allocation Source-->
-                            <div class="grid grid-cols-12">
+                            <div class="grid grid-cols-12 mt-3">
                                 <div class="col-span-2">
-                                    <InputLabel class="mt-4" value="Allocation Source" />
+                                    <InputLabel value="Allocation Source" />
                                 </div>
                                 
                                 <div class="col-span-10">
-                                    <div class="my-3">
-                                        <select class="rounded-lg text-xs border border-gray-300 w-1/2" v-model="form.allocation" id="allocation">
-                                            <option value="">Choose Alloction</option>
-                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}</option>
+                                    <div>
+                                        <select class="h-[30px] text-primary-700 border-none bg-primary-50 text-xs rounded-lg w-1/3" v-model="form.allocation" id="allocation">
+                                            <option value="" disabled>Choose Allocation</option>
+                                            <option v-for="allocation in allocations" :key="allocation.id" :value="allocation.id">{{ allocation.allocation_source }}
+                                            </option>
                                         </select>
+
+                                        <div v-if="form.allocation === ''" class="text-red-500 text-xxs-custom">* Allocation source is required</div>
+                                        <InputError class="mt-2" :message="form.errors.allocation" />
                                     </div>
                                 </div>
                             </div>
                             <!--Allocation Rate-->
-                            <div class="grid grid-cols-12 mb-4">
+                            <div class="grid grid-cols-12 mt-3">
                                 <div class="col-span-2">
-                                    <InputLabel class="mt-2" value="Allocation Rate" />
+                                    <InputLabel value="Allocation Rate" />
                                 </div>
                                 
-                                <div class="col-span-10">
-                                    <TextInput
-                                        id="allocation_rate"
-                                        type="number"
-                                        class="mt-1 block w-1/2 text-xs"
+                                <div class="col-span-10  w-1/3">
+                                    <v-money-spinner
+                                        id="total_allocation"
+                                        class="rounded-xl text-xs bg-primary-50 block border border-none focus:ring-0 text-primary-700 focus:ring-primary-50 focus:border-blue-500"
                                         v-model="form.allocation_rate"
-                                        required
-                                        style="appearance: textfield; -webkit-appearance: textfield;"
-                                    />
+                                        v-bind="config">
+                                    </v-money-spinner>
 
+                                    <div v-if="form.allocation_rate === ''" class="text-red-500 text-xxs-custom">* Allocation rate is required</div>
                                     <InputError class="mt-2" :message="form.errors.allocation_rate" />
                                 </div>
                             </div>
                             <!--Payment Installment-->
-                            <div class="grid grid-cols-12 mt-8">
+                            <div class="grid grid-cols-12 mt-3">
                                 <div class="col-span-2">
                                     <InputLabel class="mt-2" value="Payment Installment" />
                                 </div>
 
-                                <div class="col-span-5 flex justify-end">
+                                <div class="col-span-4 flex justify-end">
                                     <button class="py-1 px-1.5 text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md" @click.prevent="addInput">
                                         <div class="flex items-center">
                                             <span class=" text-xxs-custom">Add</span>
@@ -667,13 +762,19 @@ const removeInput = (index) => {
                                 <div class="col-span-10">
                                     <div class="mt-2">
                                         <div v-for="(input, index) in inputs" :key="index">
-                                            <input v-model="input.installment_name" required type="text" class="w-1/5 mr-2.5  border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="title"/>
+                                            <div class="flex">
+                                                <TextInputXxs v-model="input.installment_name" required type="text" class="mb-2 w-1/6 mr-2.5  border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="title"/>
 
-                                            <input v-model="input.installment_payment_date" required type="date" class="w-1/5  border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                                <TextInputXxs v-model="input.installment_payment_date" required type="date" class="w-1/6  border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                                <div v-if="$page.props.errors.installment_payment_date" 
+                                                v-text="$page.props.errors.installment_payment_date" class="text-red-500 text-xs"></div>
 
-                                            <button  type="button" class="bg-danger-button hover:bg-danger-button-hover rounded-md text-white px-1.5 py-1.5 m-2 ml-5 text-xs" @click="removeInput(index)">
-                                            <ReDeleteBin5Line class="text-sm"/>
-                                            </button>
+                                                <div class="my-auto">
+                                                    <button  type="button" class="bg-danger-button hover:bg-danger-button-hover rounded-md text-white mb-2 px-1.5 py-1.5 ml-5 text-xs" @click="removeInput(index)">
+                                                    <ReDeleteBin5Line class="text-sm"/>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -692,19 +793,19 @@ const removeInput = (index) => {
                             </button>
                         </div>
                         <!---Approve Modal-->
-                        <Modal :show="showConfirmCreateAllocationModal" @close="closeModalCreate">
-                            <div class="p-6">
-                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                </svg>
+                        <Modal :show="showConfirmCreateModal" @close="closeModalCreate">
+                            <div class="py-4">
+                                <div class="justify-center flex">
+                                    <ClCircleWarning class="text-5xl text-gray-400"/>
+                                </div>
                                 <div class="flex justify-center">
-                                    <h2 class="text-lg font-semibold text-slate-800">
-                                    Are you sure you want add this program?
-                                    </h2>
+                                    <p class="text-xs font-normal text-slate-800 mt-3">
+                                        Are you sure you want to Create this Program?
+                                    </p>
                                 </div>
                                 <div class="mt-6 flex justify-center space-x-2">
-                                    <SuccessButton @click="$event => createProgram()" class="text-xs font-extralight py-3">Yes, I'm sure</SuccessButton>
-                                    <SecondaryButton @click="closeModalCreate" class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
+                                    <SuccessButton @click="$event => createProgram()" class="text-xs font-extralight">Yes, I'm sure</SuccessButton>
+                                    <SecondaryButton @click="closeModalCreate" class="text-xs font-extralight">No, Cancel</SecondaryButton>
                                 </div>
                             </div>
                         </Modal>

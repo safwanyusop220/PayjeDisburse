@@ -1,9 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import { ClAddPlus } from "@kalimahapps/vue-icons";
 import { IcCancel } from "@kalimahapps/vue-icons";
-import { QuSendCancelled } from "@kalimahapps/vue-icons";
 const props = defineProps({
     href: {
         type: String,

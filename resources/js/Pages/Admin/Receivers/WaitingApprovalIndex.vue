@@ -21,6 +21,8 @@ import DangerButton from "@/Components/DangerButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import SuccessButton from "@/Components/SuccessButton.vue";
 
+import SpanRecommendedStatus from "@/Components/SpanRecommendedStatus.vue";
+
 
 // BreadCrumb
 import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
@@ -32,6 +34,7 @@ import RejectButton from "@/Components/RejectButton.vue";
 import AcceptButton from "@/Components/AcceptButton.vue";
 import { BxCheckDouble } from "@kalimahapps/vue-icons";
 import { CaViewFilled } from "@kalimahapps/vue-icons";
+import { IcCancel } from "@kalimahapps/vue-icons";
 
 const props = defineProps({
     receivers: {
@@ -41,11 +44,36 @@ const props = defineProps({
     filters: Object,
   });
 
-const selected = ref([]);
-
-const form = useForm({
-
+  const form = useForm({
+    reject_reason: props.allocation?.reject_reason,
 })
+
+const selectAll = false;
+const selected = ref([]);
+const totalSelected = ref(0); 
+
+const select = () => {
+  selected.value = [];
+  totalSelected.value = 0;
+
+  if (selectAll) {
+    for (const allocation of allocations.data) {
+      selected.value.push(allocation.id);
+      totalSelected.value++; 
+    }
+  } else {
+    for (const allocation of allocations.data) {
+      if (allocation.is_selected === true) {
+        selected.value.push(allocation.id);
+        totalSelected.value++; 
+      }
+    }
+  }
+};
+
+watch(selected, () => {
+  totalSelected.value = selected.value.length;
+});
 
 const showConfirmApproveModal = ref(false);
 
@@ -57,21 +85,87 @@ const closeModalApprove = () => {
     showConfirmApproveModal.value = false;
 };
 
-const approveReceiver = (selected) => {
+const approveReceiver = (selectedItems) => {
     try {
-        selected.forEach((id) => {
+        selectedItems.forEach((id) => {
         form.put(route("receivers.approve", id), {
             onSuccess: (page) => {
-                Toast.fire({
-                    icon: "success",
-                    title: "Allocation has successfully approved",
-                });
-            },
+            Swal.fire({
+                width: 400,
+                height: 100,
+                html: '<span class="text-sm">Allocation Has Successfully Been Recommended!</span>',
+                icon: 'success',
+                confirmButtonText: 'Okay',
+                customClass: {
+                    content: 'text-lg',
+                    confirmButton: 'px-4 py-2 text-white text-xs rounded',
+                }
+            });
+        },
         });
     });
+    selected.value = [];
+    totalSelected.value = 0;
     showConfirmApproveModal.value = false;
     } catch (err) {
         console.log(err);
+    }
+};
+
+const showConfirmRejectModal = ref(false);
+
+const reject = () => {
+    showConfirmRejectModal.value = true;
+};
+
+const closeModalReject = () => {
+    showConfirmRejectModal.value = false;
+};
+
+const rejectReceiver = async (selectedItems) => {
+    const { value } = await Swal.fire({
+        input: "textarea",
+        inputLabel: "Reason for reject",
+        inputPlaceholder: "Type your message here...",
+        inputAttributes: {
+            "aria-label": "Type your message here",
+        },
+        showCancelButton: false,
+        allowOutsideClick: false,
+        preConfirm: (value) => {
+            if (!value.trim()) {
+                Swal.showValidationMessage("Message is required");
+            }
+            showConfirmRejectModal.value = false;
+            return value;
+        },
+    });
+
+    console.log(value);
+
+    form.reject_reason = value;
+
+    try {
+        selectedItems.forEach((id) => {
+            form.post(route("receivers.reject", id), {
+            onSuccess: (page) => {
+                Toast.fire({
+                icon: "success",
+                title: "Allocation Has Successfully Rejected",
+                });
+                selected.value = [];
+                totalSelected.value = 0;
+                showConfirmRejectModal.value = false;
+            },
+            });
+        });
+    } catch (err) {
+        console.error(err);
+        Swal.fire(
+            "Error!",
+            "There was an error while rejecting the allocation.",
+            "error"
+        );
     }
 };
 
@@ -139,10 +233,44 @@ function getReceivers() {
                             <span class="font-medium text-primary-text text-lg mt-2">Receiver Waiting Approval</span>
                             
                             <div class="flex justify-end space-x-2 -mt-2">
-                                <RejectButton class="my-3">Reject</RejectButton>
-                                <button
+                                <!--Reject Button-->
+                                <button v-if="totalSelected != 0"
                                     :disabled="form.processing"
-                                    class="my-3 flex items-center px-2 text-xs text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md"
+                                    class="w-[90px] justify-center my-3 flex items-center py-1.5 px-2 text-xxs text-white font-mono bg-danger-button hover:bg-danger-button-hover rounded-md"
+                                    @click="reject">
+                                    <IcCancel class="text-lg mr-0.5" />
+                                    Reject 
+                                        <template v-if="totalSelected != 0">
+                                            <p class="bg-white rounded-full text-danger-button px-1 text-xxs text-bold ml-1">
+                                            {{ totalSelected }}
+                                            </p>
+                                        </template>
+                                </button>
+                                <button v-if="totalSelected == 0"
+                                    disabled
+                                    :disabled="form.processing"
+                                    class="w-[90px] justify-center my-3 flex items-center py-1.5 px-2 text-xxs text-white font-mono  bg-danger-button-hover rounded-md"
+                                    @click="reject">
+                                    <IcCancel class="text-lg mr-0.5" />
+                                    Reject 
+                                </button>
+                                <!--Approve Button-->
+                                <button v-if="totalSelected != 0"
+                                    :disabled="form.processing"
+                                    class="w-[90px] justify-center my-3 flex items-center px-2 text-xxs text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md"
+                                    @click="approve">
+                                    <BxCheckDouble class="text-lg mr-0.5" />
+                                    Approve
+                                        <template v-if="totalSelected != 0">
+                                            <p class="bg-white rounded-full text-success-button px-1 text-xs text-bold ml-1">
+                                            {{ totalSelected }}
+                                            </p>
+                                        </template>
+                                </button>
+                                <button v-if="totalSelected == 0"
+                                    disabled
+                                    :disabled="form.processing"
+                                    class="w-[90px] justify-center my-3 flex items-center px-2 text-xxs text-white font-mono bg-success-button-hover rounded-md"
                                     @click="approve">
                                     <BxCheckDouble class="text-lg mr-0.5" />
                                     Approve
@@ -150,7 +278,7 @@ function getReceivers() {
                             </div>
                         </div>
 
-                        <div class="border-b-2 border-gray-200 mb-5"></div>
+                        <div class="border-b-2 border-gray-200 mb-2"></div>
 
                         <div class="mb-2 flex justify-between">
                             <BsSearch class="absolute ml-2 text-sm text-gray-500 mt-2" />
@@ -176,11 +304,7 @@ function getReceivers() {
                             <Table>
                                 <template #header>
                                     <TableRow>
-                                        <TableHeaderCellLeft>
-                                            <div class="flex items-center">
-                                                <input v-model="selectAll" @click="select" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                            </div>
-                                        </TableHeaderCellLeft>
+                                        <TableHeaderCellLeft></TableHeaderCellLeft>
                                         <TableHeaderCell class="w-1/12">No</TableHeaderCell>
                                         <TableHeaderCell class="w-2/12">Receiver</TableHeaderCell>
                                         <TableHeaderCell class="w-1/12">No IC</TableHeaderCell>
@@ -192,13 +316,13 @@ function getReceivers() {
                                     </TableRow>
                                 </template>
                                 <template #default>
-                                    <TableRow v-for="receiver in receivers.data" :key="receiver.id" class="border-b">
+                                    <TableRow v-for="(receiver, index) in receivers.data" :key="receiver.id" class="border-b">
                                         <TableDataCell>
                                             <div class="flex items-center">
-                                                <input type="checkbox" :value="receiver.id" v-model="selected" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                                <input type="checkbox" :value="receiver.id" v-model="selected" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-white">
                                             </div>
                                         </TableDataCell>
-                                        <TableDataCell class="w-1/12">{{ receiver.id }}</TableDataCell>
+                                        <TableDataCell class="w-1/12">{{ index + 1 }}</TableDataCell>
                                         <TableDataCell class="w-2/12">
                                             <div class="col">
                                                 <div class="row">
@@ -217,21 +341,8 @@ function getReceivers() {
                                         <TableDataCell class="w-1/12">{{ receiver.identification_number }}</TableDataCell>
                                         <TableDataCell class="w-3/12">{{ receiver.address }}</TableDataCell>
                                         <TableDataCell class="w-1/12">{{ receiver.program.name }}</TableDataCell>
-                                        <TableDataCell class="w-12/12 text-center">
-                                            <span
-                                                :class="{
-                                                    'bg-blue-100 text-blue-800 text-xs font-thin px-2 py-0.5 rounded-full':
-                                                    receiver.status === 1,
-                                                    'bg-yellow-100 text-yellow-400 text-xs font-thin px-3 py-0.5 rounded-full':
-                                                    receiver.status === 2,
-                                                    'bg-green-200 text-green-400 text-xs font-thin px-5 py-0.5 rounded-full':
-                                                    receiver.status === 3,
-                                                    'bg-red-100 text-red-500 text-xs font-thin px-7 py-0.5 rounded-full':
-                                                    receiver.status === 4,
-                                                }"
-                                                >
-                                                {{ receiver.status_id.name }}
-                                            </span>
+                                        <TableDataCell >
+                                            <SpanRecommendedStatus :value="receiver.status_id.name"/>
                                         </TableDataCell> 
                                         <TableDataCell class="w-2/12">
                                             <div class="col">
@@ -245,10 +356,7 @@ function getReceivers() {
                                                 </div>
                                             </div>
                                         </TableDataCell>    
-                                                                    
-                                        <!---<TableDataCell> {{ allocation.allocation_balance === null ? '-' : 'RM '+ allocation.allocation_balance }}
 
-                                        </TableDataCell>-->
                                         <TableDataCellView class="w-1/12">
                                             <div class="row">
                                                 <div class="grid grid-cols-2 justify-items-center">
@@ -287,18 +395,51 @@ function getReceivers() {
                                     />
                                 </svg>
                                 <div class="flex justify-center">
-                                    <h2 class="text-lg font-semibold text-slate-800">
-                                        Are you sure you want to
-                                        Approve this Allocation?
-                                    </h2>
+                                    <p class="text-xs font-normal text-slate-800">
+                                        Are You Sure You Want To
+                                        Approve This Receiver?
+                                    </p>
                                 </div>
                                 <div class="mt-6 flex justify-center space-x-2">
                                     <SuccessButton
                                         @click="($event) =>approveReceiver(selected)"
-                                        class="text-xs font-extralight py-3">Yes, I'm sure</SuccessButton>
+                                        class="text-xs font-extralight">Yes, I'm sure</SuccessButton>
                                     <SecondaryButton
                                         @click="closeModalApprove"
-                                        class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
+                                        class="text-xs font-extralight">No, Cancel</SecondaryButton>
+                                </div>
+                            </div>
+                        </Modal>
+                        <!--Reject Modal-->
+                        <Modal
+                            :show="showConfirmRejectModal"
+                            @close="closeModalReject">
+                            <div class="p-6">
+                                <svg
+                                    class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200"
+                                    aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 20 20">
+                                    <path
+                                        stroke="currentColor"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                                <div class="flex justify-center">
+                                    <P class="text-xs font-normal text-slate-800">
+                                        Are You Sure Want To
+                                        Reject This Receiver?
+                                    </P>
+                                </div>
+                                <div class="mt-6 flex justify-center space-x-2">
+                                    <DangerButton @click="($event) =>rejectReceiver(selected)"
+                                        class="text-xs font-extralight">Yes, I'm sure</DangerButton>
+                                    <SecondaryButton @click="closeModalReject"
+                                        class="text-xs font-extralight">No, Cancel</SecondaryButton>
                                 </div>
                             </div>
                         </Modal>

@@ -1,9 +1,8 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import { ClAddPlus } from "@kalimahapps/vue-icons";
-import { MdOutlinedCreateNewFolder } from "@kalimahapps/vue-icons";
-import { SuCreate } from "@kalimahapps/vue-icons";
+import { FlDocumentOnePageAdd } from "@kalimahapps/vue-icons";
+
 const props = defineProps({
     href: {
         type: String,
@@ -22,8 +21,8 @@ const classes = computed(() =>
 </script>
 
 <template>
-    <Link :href="href" class="flex items-center px-3 text-xs text-white font-mono bg-primary-button hover:bg-primary-button-hover rounded-md">
-        <SuCreate class="text-lg mr-0.5" />
+    <Link :href="href" class="flex items-center px-3 py-1.5 mt-1 text-xxs text-white font-mono bg-primary-500 hover:bg-primary-400 rounded-md">
+        <FlDocumentOnePageAdd class="text-lg mr-0.5" />
         <slot />
 
     </Link>

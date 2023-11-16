@@ -10,7 +10,14 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import TextInputXxs from '@/Components/TextInputXxs.vue';
 
+import Content from "@/Components/Content.vue";
+
+// BreadCrumb
+import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
+import BreadcrumbActive from "@/Components/BreadcrumbActive.vue";
+import BreadcrumbCurrent from "@/Components/BreadcrumbCurrent.vue";
 
 import Table from "@/Components/Table.vue";
 import TableRow from "@/Components/TableRow.vue";
@@ -18,7 +25,8 @@ import TableHeaderCell from "@/Components/TableHeaderCell.vue";
 import TableDataCell from "@/Components/TableDataCell.vue";
 
 const form = useForm({
-    name: ""
+    name: "",
+    group_name: ""
 })
 </script>
 
@@ -26,36 +34,66 @@ const form = useForm({
     <Head title="Create new Permission" />
 
     <AdminLayout>
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="flex justify-between">
-                        <div class="p-1 text-gray-900 text-sm font-bold">| Perincian Akses | Tambah Perincian Akses</div>
-                    </div>
-                    <div class="mt-6 bg-primary-100 rounded-lg p-6 max-w-md mx-auto">
-                        <form @submit.prevent="form.post(route('permissions.store'))">
-                            <div>
-                                <InputLabel for="name" value="Name" />
-                                <TextInput
+        <div class="mt-14">
+            <div class="w-full mx-auto">
+                <div class="flex justify-between pt-4">
+                    <nav class="text-sm font-semibold" aria-label="Breadcrumb">
+                        <ol class="list-none p-0 inline-flex">
+                            <li class="flex items-center">
+                                <BreadcrumbInitial :href="route('permissions.index')"></BreadcrumbInitial>
+                            </li>
+                            <li class="flex items-center">
+                                <BreadcrumbActive :href="route('permissions.index')">Permission</BreadcrumbActive>
+                            </li>
+                            <li class="flex items-center">
+                                <BreadcrumbCurrent>Create Permission</BreadcrumbCurrent>
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+                <form @submit.prevent="form.post(route('permissions.store'))">
+                    <Content>
+                        <!--Permission Name-->
+                        <div class="grid grid-cols-12 mt-4">
+                            <div class="col-span-2">
+                                <InputLabel class="mt-1.5" value="Permission Name" />
+                            </div>
+                            <div class="col-span-10">
+                                <TextInputXxs
                                     id="name"
                                     type="text"
-                                    class="mt-1 block w-full"
+                                    class=" block w-1/3 text-xs"
                                     v-model="form.name"
-                                    autofocus
-                                    autocomplete="username"
                                 />
+                            </div>
+                        </div>
 
-                                <InputError class="mt-2" :message="form.errors.name" />
+                        <!--Permission Group-->
+                        <div class="grid grid-cols-12">
+                                <div class="col-span-2">
+                                    <InputLabel class="mt-4" value="Permission Group" />
+                                </div>
+                                
+                                <div class="col-span-10">
+                                    <div class="my-3">
+                                        <select class="h-[30px] text-primary-700 border-none bg-primary-50 text-xs rounded-lg w-1/3 focus:ring-white" v-model="form.group_name" id="allocation">
+                                            <option value="" disabled>Select Group</option>
+                                            <option value="Allocation">Allocation</option>
+                                            <option value="Program">Program</option>
+                                            <option value="Receiver">Receiver</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="flex items-center justify-end mt-8">
-                                <Link :href="route('permissions.index')" class="mr-2.5 px-6 py-2 text-md text-white font-semibold bg-gray-400 hover:bg-gray-500 rounded-lg">Back</Link>
-                                <button :class="{ 'opacity-25 mr-2.5 px-3 py-2 text-md text-white font-semibold bg-primary-400 hover:bg-primary-500 rounded': form.processing }" :disabled="form.processing" class="mr-2.5 px-3 py-2 text-md text-white font-semibold bg-primary-400 hover:bg-primary-600 rounded-lg">Submit</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+                        <div class="flex items-center justify-end mt-8">
+                            <Link :href="route('permissions.index')" class="mr-2.5 px-6 py-2 text-md text-white font-semibold bg-gray-400 hover:bg-gray-500 rounded-lg">Back</Link>
+                            <button :class="{ 'opacity-25 mr-2.5 px-3 py-2 text-md text-white font-semibold bg-primary-400 hover:bg-primary-500 rounded': form.processing }" :disabled="form.processing" class="mr-2.5 px-3 py-2 text-md text-white font-semibold bg-primary-400 hover:bg-primary-600 rounded-lg">Submit</button>
+                        </div>
+                    </Content>
+                    
+                </form>
+        </div>
         </div>
     </AdminLayout>
 </template>

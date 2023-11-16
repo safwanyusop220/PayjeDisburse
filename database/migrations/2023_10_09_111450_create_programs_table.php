@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreign('status')->references('id')->on('statuses')->default('1');
             $table->unsignedBigInteger('type_id');
             $table->foreign('type_id')->references('id')->on('program_types');
-            $table->integer('allocation_rate');
+            $table->decimal('allocation_rate', 13, 2);
             $table->string('latest_payment')->nullable();
             $table->string('payment_date')->nullable();
             $table->string('total_month')->nullable();

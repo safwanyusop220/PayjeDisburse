@@ -39,23 +39,31 @@ const props = defineProps({
         required: true
     },
     permissions: Array,
+    groups: Array,
 });
 
 const form = useForm({
     name: props.role.name,
     description: props.role.description,
-    permissions: []
+    permissions: [],
+    permission: [],
 });
 
 
 
 onMounted(() =>{
     form.permissions = props.role?.permissions;
+    form.permission = props.role?.permission;
+
 });
 
 watch(
     () => props.role,
-    () => (form.permissions = props.role?.permissions)
+    () => (
+        form.permissions = props.role?.permissions,
+        form.permission = props.role?.permission
+
+        )
 );
 
 </script>
@@ -111,41 +119,73 @@ watch(
                                 <InputError class="mt-2" :message="form.errors.description" />
                             </div>
                             <InputLabel for="Permission" value="Access Details" />
+                            <!--All Permission-->
+                            <div class="bg-primary-100 rounded-xl px-2 pt-1 pb-2 mt-1 mr-2">
+                                <div class="">
+                                    <input
+                                        type="checkbox"
+                                        class="mr-1 rounded border-primary-300 focus:ring-primary-100 px-2 text-xs"
+                                    />
+                                    <label class="text-xxs font-medium uppercase text-primary-700">All Permission
+                                    </label>
+                                </div>
+                                
+                            </div>
+
+                            <!--Access Details-->
+                            <div class="">
+                                <div class="grid grid-cols-3">
+                                    <template v-for="group in groups">
+                                        <div class="bg-primary-100 rounded-xl px-2 py-2 mt-2 mr-2">
+                                            <div class="mb-1">
+                                                <input
+                                                    :key="group.id"
+                                                    type="checkbox"
+                                                    :id="group.id"
+                                                    :value="group.id"
+                                                    class="mr-1 rounded border-primary-300 focus:ring-primary-100 px-2 text-xs"
+                                                />
+                                                <label class="text-xxs font-medium text-primary-700" :for="group.id">
+                                                    {{ group.name.toUpperCase() }}
+                                                </label>
+                                            </div>
+                                            
+                                            <template v-for="permission in group.permissions">
+                                                <div class="ml-5 -mt-1.5">
+                                                    <input
+                                                        :key="permission.id"
+                                                        type="checkbox"
+                                                        :id="permission.id"
+                                                        v-model="form.permission"
+                                                        :value="permission"
+                                                        class="mr-1 rounded border-primary-300 focus:ring-primary-100 px-2 text-xs"
+                                                    />
+                                                    
+                                                    <label class="text-xxs text-primary-700" :for="permission.id">{{ permission.name }}</label>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
 
                             <div class="-mt-2 mb-4">
-                                <div class="grid grid-cols-3 space-x-4">
+                                <div class="grid grid-cols-3">
                                     <template v-for="permission in permissions">
-                                        <div class="bg-primary-50 rounded-xl px-2 py-2 mt-4">
+                                        <div class="bg-primary-50 rounded-xl px-2 py-2 mt-4 mr-3">
                                             <div>
                                                 <div class="col">
                                                     <div class="row">
                                                         <div class=" items-center" >
-                                                        <input
-                                                            :key="permission.id"
-                                                            type="checkbox"
-                                                            :id="permission.id"
-                                                            v-model="form.permissions"
-                                                            :value="permission"
-                                                            class="mr-2 rounded px-2 text-xs"
-                                                        />
-                                                        <label class="text-xs" :for="permission.id">{{ permission.name.toUpperCase() }}</label>
-                                                    
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col">
-                                                    <div class="row">
-                                                        <div class="items-center" >
-                                                        <input
-                                                            :key="permission.id"
-                                                            type="checkbox"
-                                                            :id="permission.id"
-                                                            v-model="form.permissions"
-                                                            :value="permission"
-                                                            class="ml-3 mr-2 rounded px-2 text-xs"
-                                                        />
-                                                        <label class="text-xs" :for="permission.id">{{ permission.name.toUpperCase() }}</label>
-                                                    
+                                                            <input
+                                                                :key="permission.id"
+                                                                type="checkbox"
+                                                                :id="permission.id"
+                                                                v-model="form.permissions"
+                                                                :value="permission"
+                                                                class="mr-2 rounded px-2 text-xs"
+                                                            />
+                                                            <label class="text-xs" :for="permission.id">{{ permission.name.toUpperCase() }}</label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -167,30 +207,7 @@ watch(
                             </div>
                         </form>
                     </Content>
-                    <!--
-                    <div class="mt-6">
-                        <div class="bg-slate-100 pt-8 px-3 py-3 rounded-lg">
-                            <p class="-mt-4 mb-4 text-xl font-bold">Permission</p>
-                            <Table>
-                                <template #header>
-                                    <TableRow>
-                                        <TableHeaderCell>ID</TableHeaderCell>
-                                        <TableHeaderCell>Name</TableHeaderCell>
-                                        <TableHeaderCell>Action</TableHeaderCell>
-                                    </TableRow>
-                                </template>
-                                <template #default>
-                                    <TableRow v-for="rolePermission in role.permissions" :key="rolePermission.id" class="border-b">
-                                        <TableDataCell>{{ rolePermission.id }}</TableDataCell>
-                                        <TableDataCell>{{ rolePermission.name }}</TableDataCell>
-                                        <TableDataCell class="space-x-4">
-                                            <Link :href="route('roles.permissions.destroy', [role.id, rolePermission.id])" method="DELETE" as="button" class="text-red-400 hover:text-red-600">Invoke</Link>
-                                        </TableDataCell>
-                                    </TableRow>
-                                </template>
-                            </Table>
-                        </div>
-                    </div>-->
+
                 </div>
             </div>
         </div>

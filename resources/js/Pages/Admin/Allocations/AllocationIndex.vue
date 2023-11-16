@@ -12,6 +12,11 @@ import TableHeaderCellLeft from "@/Components/TableHeaderCellLeft.vue";
 import TableHeaderCellRight from "@/Components/TableHeaderCellRight.vue";
 import TablePagination from "@/Components/TablePagination.vue";
 
+import SpanSubmittedStatus from "@/Components/SpanSubmittedStatus.vue";
+import SpanRecommendedStatus from "@/Components/SpanRecommendedStatus.vue";
+import SpanApprovedStatus from "@/Components/SpanApprovedStatus.vue";
+import SpanRejectedStatus from "@/Components/SpanRejectedStatus.vue";
+
 import Content from "@/Components/Content.vue";
 
 import Modal from "@/Components/Modal.vue";
@@ -20,12 +25,13 @@ import SecondaryButton from "@/Components/SecondaryButton.vue";
 import SuccessButton from "@/Components/SuccessButton.vue";
 import AddButton from "@/Components/AddButton.vue";
 
-// BreadCrumb
 import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
 import BreadcrumbActive from "@/Components/BreadcrumbActive.vue";
 import BreadcrumbCurrent from "@/Components/BreadcrumbCurrent.vue";
 
 import { BsSearch } from "@kalimahapps/vue-icons";
+import { SuCreate } from "@kalimahapps/vue-icons";
+import { FlDelete } from "@kalimahapps/vue-icons";
 
 const props = defineProps({
     allocations: {
@@ -38,7 +44,6 @@ const props = defineProps({
 
 const form = useForm({});
 
-// Delete Allocation
 const showConfirmDeleteAllocationModal = ref(false);
 const selectedId = ref(null);
 
@@ -68,7 +73,6 @@ const deleteAllocation = (id) => {
     showConfirmDeleteAllocationModal.value = false;
 };
 
-// Delete SweetAllert
 const Toast = Swal.mixin({
     toast: true,
     position: "top-end",
@@ -82,30 +86,19 @@ const Toast = Swal.mixin({
     },
 });
 
-// Pagination
 
-// Define the formatTimestamp method
 const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp); // Convert Unix timestamp to milliseconds
-    const formattedDate = date.toISOString().split("T")[0];
-    return formattedDate;
-};
+  const date = new Date(timestamp);
 
-//getStatusText method
-const getStatusText = (status) => {
-    switch (status) {
-        case 1:
-            return "Sedang Diproses";
-        case 2:
-            return "Telah Diproses";
-        case 3:
-            return "Diluluskan";
-        case 4:
-            return "Ditolak";
-        default:
-            return "Unknown Status";
-    }
-};
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const year = date.getFullYear().toString().slice(-2);
+
+  const formattedDate = `${day}/${month}/${year}`;
+
+  return formattedDate;
+}
+
 
 const search = ref(props.filters.search);
 const perPage = ref(5);
@@ -129,6 +122,19 @@ function getAllocations() {
     );
 }
 
+function recommendedDialog() {
+    Swal.fire({
+            width: 450,
+            height: 50,
+            html: '<span class="text-sm">Changes to Recommended Allocations Are Not Allowed!</span>',
+            icon: 'warning',
+            confirmButtonText: 'Okay',
+            customClass: {
+                content: 'text-lg',
+                confirmButton: 'px-4 py-2 text-white text-xs rounded',
+            }
+        });
+    }
 </script>
 
 <template>
@@ -141,28 +147,24 @@ function getAllocations() {
                     <nav class="text-sm font-semibold" aria-label="Breadcrumb">
                         <ol class="inline-flex list-none">
                             <li class="flex items-center">
-                                <BreadcrumbInitial
-                                    :href="route('allocations.index')"
-                                ></BreadcrumbInitial>
+                                <BreadcrumbInitial :href="route('allocations.index')"></BreadcrumbInitial>
                             </li>
                             <li class="flex items-center">
-                                <BreadcrumbCurrent
-                                    >Allocation</BreadcrumbCurrent
-                                >
+                                <BreadcrumbCurrent>
+                                    Allocation
+                                </BreadcrumbCurrent>
                             </li>
                         </ol>
                     </nav>
                 </div>
                 <Content>
-                    <div class="mb-3 mt-1 flex justify-between">
-                        <span class="mt-1.5 text-lg font-medium text-primary-text">Allocations</span>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-primary-text text-lg mt-2">Allocations</span>
 
-                        <div class="flex justify-end">
-                            <AddButton :href="route('allocations.create')">Create</AddButton>
-                        </div>
+                        <AddButton :href="route('allocations.create')">Create</AddButton>
                     </div>
 
-                    <div class="mb-2 border-b-2 border-gray-200"></div>
+                    <div class="mb-2 mt-2.5 border-b-2 border-gray-200"></div>
 
                     <div class="mb-2 flex justify-between">
                         <BsSearch class="absolute ml-2 text-sm text-gray-500 mt-2" />
@@ -170,13 +172,13 @@ function getAllocations() {
                             v-model="search"
                             type="text"
                             placeholder="Search"
-                            class="pl-7 w-1/3 rounded-md bg-primary-50 text-xs border-none focus:ring-primary-100"
+                            class="pl-7 w-1/3 rounded-md text-primary-600 bg-primary-50 text-xs border-none focus:ring-primary-100"
                         />
 
                         <select
                             v-model="perPage"
                             @change="getAllocations"
-                            class="rounded-md bg-primary-50 text-xs border-none focus:ring-primary-100">
+                            class="rounded-md bg-primary-50 text-xs text-primary-400 border-none focus:ring-primary-100">
                             <option value="1">10</option>
                             <option value="2">20</option>
                             <option value="5">50</option>
@@ -193,109 +195,50 @@ function getAllocations() {
                                     <TableHeaderCell>Allocation Source</TableHeaderCell>
                                     <TableHeaderCell>Total Source</TableHeaderCell>
                                     <TableHeaderCell>Allocation Balance</TableHeaderCell>
-                                    <TableHeaderCell class="text-center">Approval Status</TableHeaderCell>
+                                    <TableHeaderCell class="text-center">Status</TableHeaderCell>
                                     <TableHeaderCellRight>Action</TableHeaderCellRight>
                                 </TableRow>
                             </template>
                             <template #default>
-                                <TableRow
-                                    v-for="allocation in allocations.data"
-                                    :key="allocation.id"
-                                    class="border-b">
-                                    <TableDataCell>{{allocation.id}}</TableDataCell>
+                                <TableRow v-for="(allocation , index) in allocations.data" :key="allocation.id" class="border-b">
+                                    <TableDataCell>{{ index + 1 }}</TableDataCell>
                                     <TableDataCell>{{formatTimestamp(allocation.created_at)}}</TableDataCell>
-                                    <TableDataCell>{{allocation.allocation_source
-                                    }}</TableDataCell>
-                                    <TableDataCell
-                                        >RM
-                                        {{
-                                            allocation.total_allocation
-                                        }}</TableDataCell
-                                    >
-                                    <TableDataCell>
-                                        {{
-                                            allocation.allocation_balance ===
-                                            null
-                                                ? "-"
-                                                : "RM " +
-                                                  allocation.allocation_balance
-                                        }}
+                                    <TableDataCell class="text-md">{{allocation.allocation_source}}</TableDataCell>
+                                    <TableDataCell>RM{{allocation.total_allocation}}</TableDataCell>
+                                    <TableDataCell>{{allocation.allocation_balance ===null? "-": "RM " +allocation.allocation_balance}}
                                     </TableDataCell>
-                                    <TableDataCell class="text-center">
+                                    <TableDataCell class="flex justify-center">
                                         <template v-if="allocation.status == 1">
-                                            <span
-                                                class="mr-2 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-normal text-blue-800"
-                                            >
-                                                {{ allocation.status_id.name }}
-                                            </span>
+                                            <SpanSubmittedStatus :value="allocation.status_id.name"/>
+                                        </template>
+                                        <template v-if="allocation.status == 2">
+                                            <SpanRecommendedStatus :value="allocation.status_id.name"/>
                                         </template>
                                         <template v-if="allocation.status == 3">
-                                            <span
-                                                class="mr-2 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-normal text-green-800"
-                                            >
-                                                {{ allocation.status_id.name }}
-                                            </span>
+                                            <SpanApprovedStatus :value="allocation.status_id.name"/>
                                         </template>
                                         <template v-if="allocation.status == 4">
-                                            <span
-                                                class="mr-2 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-normal text-red-800"
-                                            >
-                                                {{ allocation.status_id.name }}
-                                            </span>
+                                            <SpanRejectedStatus :value="allocation.status_id.name"/>
                                         </template>
                                     </TableDataCell>
                                     <TableDataCell class="">
                                         <div class="row">
-                                            <div
-                                                class="grid grid-cols-2 justify-items-center"
-                                            >
-                                                <Link
-                                                    :href="
-                                                        route(
-                                                            'allocations.edit',
-                                                            allocation.id
-                                                        )
-                                                    "
-                                                    class="-mr-2 text-blue-400 hover:text-blue-600"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke-width="1.5"
-                                                        stroke="currentColor"
-                                                        class="h-4 w-4"
-                                                    >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-                                                        />
-                                                    </svg>
-                                                </Link>
+                                            <div class="grid grid-cols-2 justify-items-center">
+                                                <template v-if="allocation.status == 2">
+                                                    <a class="-mr-2 text-blue-400 hover:text-blue-600 cursor-pointer" @click="recommendedDialog">
+                                                        <SuCreate class="text-lg font-bold" />
+                                                    </a>
+                                                </template>
+                                                <template v-else>
+                                                    <Link
+                                                        :href="route('allocations.edit',allocation.id)"
+                                                        class="-mr-2 text-blue-400 hover:text-blue-600">
+                                                        <SuCreate class="text-lg"/>
+                                                    </Link>
+                                                </template>
                                                 <button
-                                                    @click="
-                                                        (e) =>
-                                                            confirmDeleteAllocation(
-                                                                allocation.id
-                                                            )
-                                                    "
-                                                    class="-ml-2 text-red-400 hover:text-red-600"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke-width="1.5"
-                                                        stroke="currentColor"
-                                                        class="h-4 w-4"
-                                                    >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                                                        />
-                                                    </svg>
+                                                    @click="(e) =>confirmDeleteAllocation(allocation.id)" class="-ml-2 text-red-400 hover:text-red-600">
+                                                    <FlDelete class="text-lg"/>
                                                 </button>
                                             </div>
                                         </div>
@@ -303,16 +246,13 @@ function getAllocations() {
                                     <!--Delete Allocation-->
                                     <Modal
                                         :show="showConfirmDeleteAllocationModal"
-                                        @close="closeModal"
-                                    >
+                                        @close="closeModal">
                                         <div class="p-6">
                                             <svg
                                                 class="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-gray-200"
                                                 aria-hidden="true"
                                                 xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 20 20"
-                                            >
+                                                fill="none">
                                                 <path
                                                     stroke="currentColor"
                                                     stroke-linecap="round"
@@ -322,26 +262,18 @@ function getAllocations() {
                                                 />
                                             </svg>
                                             <div class="flex justify-center">
-                                                <h2
-                                                    class="text-lg font-semibold text-slate-800"
-                                                >
-                                                    Are you sure you want to
-                                                    reject this Allocation?
+                                                <h2 class="text-xs font-normal text-slate-800">
+                                                    Are You Sure Want To
+                                                    Reject This Allocation?
                                                 </h2>
                                             </div>
-                                            <div
-                                                class="mt-6 flex justify-center space-x-2"
-                                            >
+                                            <div class="mt-6 flex justify-center space-x-2">
                                                 <DangerButton
                                                     @click="deleteAllocation"
-                                                    class="py-3 text-xs font-extralight"
-                                                    >Yes, I'm sure</DangerButton
-                                                >
+                                                    class="text-xs font-extralight">Yes, I'm sure</DangerButton>
                                                 <SecondaryButton
                                                     @click="closeModal"
-                                                    class="py-3 text-xs font-extralight"
-                                                    >No, Cancel</SecondaryButton
-                                                >
+                                                    class="text-xs font-extralight">No, Cancel</SecondaryButton>
                                             </div>
                                         </div>
                                     </Modal>

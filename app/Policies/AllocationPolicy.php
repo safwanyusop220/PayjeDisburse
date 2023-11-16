@@ -24,12 +24,21 @@ class AllocationPolicy
         //
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
+
+
+    public function waitingRecommendation(User $user): bool
+    {
+        return $user->hasPermissionTo('Allocation Recommendation') ? true : false;
+    }
+
+    public function waitingApproval(User $user): bool
+    {
+        return $user->hasPermissionTo('Allocation Approval') ? true : false;
+    }
+
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('create allocation') ? true : false;
+        return $user->hasPermissionTo('Create Allocation') ? true : false;
     }
 
     /**

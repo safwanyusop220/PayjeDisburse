@@ -15,16 +15,17 @@ import TablePagination from "@/Components/TablePagination.vue";
 
 import Content from "@/Components/Content.vue";
 
-// Modal Component
 import Modal from "@/Components/Modal.vue";
 import DangerButton from "@/Components/DangerButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import SuccessButton from "@/Components/SuccessButton.vue";
 
-// BreadCrumb
 import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
 import BreadcrumbActive from "@/Components/BreadcrumbActive.vue";
 import BreadcrumbCurrent from "@/Components/BreadcrumbCurrent.vue";
+
+import SpanRecommendedStatus from "@/Components/SpanRecommendedStatus.vue";
+
 
 import RejectButton from "@/Components/RejectButton.vue";
 import AcceptButton from "@/Components/AcceptButton.vue";
@@ -33,6 +34,8 @@ import { BxCheckDouble } from "@kalimahapps/vue-icons";
 import { FlReceiptMoney } from "@kalimahapps/vue-icons";
 import { CaViewFilled } from "@kalimahapps/vue-icons";
 import { BsSearch } from "@kalimahapps/vue-icons";
+import { IcCancel } from "@kalimahapps/vue-icons";
+
 
 const props = defineProps({
     allocations: {
@@ -42,51 +45,52 @@ const props = defineProps({
     filters: Object,
   });
 
-// Define the formatTimestamp method
-const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp); // Convert Unix timestamp to milliseconds
-    const formattedDate = date.toISOString().split('T')[0];
-    return formattedDate;
+  const formatTimestamp = (timestamp) => {
+  const date = new Date(timestamp);
+
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const year = date.getFullYear().toString().slice(-2);
+
+  const formattedDate = `${day}/${month}/${year}`;
+
+  return formattedDate;
 }
 
-//getStatusText method 
-const getStatusText = (status) => {
-    switch (status) {
-        case 1:
-            return 'Sedang Diproses';
-        case 2:
-            return 'Telah Diproses';
-        case 3:
-            return 'Diluluskan';
-        case 4:
-            return 'Ditolak';
-        default:
-            return 'Unknown Status';
-    }
-};
-
 const form = useForm({
-
+    reject_reason: props.allocation?.reject_reason,
 })
 
 const selectAll = false;
 const selected = ref([]);
-
+const totalSelected = ref(0); 
 
 const select = () => {
   selected.value = [];
-  if (!selectAll) {
-    for (const allocation of allocations.value.data) {
+  totalSelected.value = 0;
+
+  if (selectAll) {
+    for (const allocation of allocations.data) {
       selected.value.push(allocation.id);
+      totalSelected.value++; 
+    }
+  } else {
+    for (const allocation of allocations.data) {
+      if (allocation.is_selected === true) {
+        selected.value.push(allocation.id);
+        totalSelected.value++; 
+      }
     }
   }
 };
 
+watch(selected, () => {
+  totalSelected.value = selected.value.length;
+});
 
-// Modal Approve
+
 const showConfirmApproveAllocationModal = ref(false);
 
-// Method for "Luluskan" button
 const approve = () => {
     showConfirmApproveAllocationModal.value = true;
 };
@@ -95,25 +99,90 @@ const closeModalApprove = () => {
     showConfirmApproveAllocationModal.value = false;
 };
 
-const approveAllocation = (selected) => {
+const approveAllocation = (selectedItems) => {
     try {
-        selected.forEach((id) => {
-        form.put(route("allocations.approve", id), {
-            onSuccess: (page) => {
-                Toast.fire({
-                    icon: "success",
-                    title: "Allocation has successfully approved",
+        selectedItems.forEach((id) => {
+            form.put(route("allocations.approve", id), {
+                onSuccess: (page) => {
+                Swal.fire({
+                    width: 400,
+                    height: 100,
+                    html: '<span class="text-sm">Allocation Has Successfully Been Approved!</span>',
+                    icon: 'success',
+                    confirmButtonText: 'Okay',
+                    customClass: {
+                        content: 'text-lg',
+                        confirmButton: 'px-4 py-2 text-white text-xs rounded',
+                    }
                 });
             },
         });
-    })
+    });
+    selected.value = [];
+    totalSelected.value = 0;
     showConfirmApproveAllocationModal.value = false;
     } catch (err) {
         console.log(err);
     }
 };
 
-// Approve SweetAllert
+const showConfirmRejectAllocationModal = ref(false);
+
+const reject = () => {
+    showConfirmRejectAllocationModal.value = true;
+};
+
+const closeModalReject = () => {
+    showConfirmRejectAllocationModal.value = false;
+};
+
+const rejectAllocation = async (selectedItems) => {
+    const { value } = await Swal.fire({
+        input: "textarea",
+        inputLabel: "Reason for reject",
+        inputPlaceholder: "Type your message here...",
+        inputAttributes: {
+            "aria-label": "Type your message here",
+        },
+        showCancelButton: false,
+        allowOutsideClick: false,
+        preConfirm: (value) => {
+            if (!value.trim()) {
+                Swal.showValidationMessage("Message is required");
+            }
+            showConfirmRejectAllocationModal.value = false;
+            return value;
+        },
+    });
+
+    console.log(value);
+
+    form.reject_reason = value;
+
+    try {
+        selectedItems.forEach((id) => {
+            form.post(route("allocations.reject", id), {
+            onSuccess: (page) => {
+                Toast.fire({
+                icon: "success",
+                title: "Allocation Has Successfully Rejected",
+                });
+                selected.value = [];
+                totalSelected.value = 0;
+                showConfirmRejectAllocationModal.value = false;
+            },
+            });
+        });
+    } catch (err) {
+        console.error(err);
+        Swal.fire(
+            "Error!",
+            "There was an error while rejecting the allocation.",
+            "error"
+        );
+    }
+};
+
 const Toast = Swal.mixin({
     toast: true,
     position: "top-end",
@@ -131,7 +200,7 @@ const search = ref(props.filters.search);
 const perPage = ref(5);
 
 watch(search, (value) =>{
-    router.get("/allocations/allocations-waiting-approval", {search: value, perPage: perPage.value},
+    router.get("/allocations/waiting-approval", {search: value, perPage: perPage.value},
     {
         preserveState: true,
         replace: true
@@ -140,7 +209,7 @@ watch(search, (value) =>{
 
 function getAllocations() {
     router.get(
-        "/allocations/allocations-waiting-approval",
+        "/allocations/waiting-approval",
         { perPage: perPage.value, search: search.value },
         {
             preserveState: true,
@@ -177,10 +246,44 @@ function getAllocations() {
                             <span class="font-medium text-primary-text text-lg mt-2">Allocations Waiting Approval</span>
                             
                             <div class="flex justify-end space-x-2 -mt-2">
-                                <RejectButton class="my-3">Reject</RejectButton>
-                                <button
+                                <!--Reject Button-->
+                                <button v-if="totalSelected != 0"
                                     :disabled="form.processing"
-                                    class="my-3 flex items-center px-2 text-xs text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md"
+                                    class="w-[90px] justify-center my-3 flex items-center py-1.5 px-2 text-xxs text-white font-mono bg-danger-button hover:bg-danger-button-hover rounded-md"
+                                    @click="reject">
+                                    <IcCancel class="text-lg mr-0.5" />
+                                    Reject 
+                                        <template v-if="totalSelected != 0">
+                                            <p class="bg-white rounded-full text-danger-button px-1 text-xxs text-bold ml-1">
+                                            {{ totalSelected }}
+                                            </p>
+                                        </template>
+                                </button>
+                                <button v-if="totalSelected == 0"
+                                    disabled
+                                    :disabled="form.processing"
+                                    class="w-[90px] justify-center my-3 flex items-center py-1.5 px-2 text-xxs text-white font-mono  bg-danger-button-hover rounded-md"
+                                    @click="reject">
+                                    <IcCancel class="text-lg mr-0.5" />
+                                    Reject 
+                                </button>
+                                <!--Approve Button-->
+                                <button v-if="totalSelected != 0"
+                                    :disabled="form.processing"
+                                    class="w-[90px] justify-center my-3 flex items-center px-2 text-xxs text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md"
+                                    @click="approve">
+                                    <BxCheckDouble class="text-lg mr-0.5" />
+                                    Approve
+                                        <template v-if="totalSelected != 0">
+                                            <p class="bg-white rounded-full text-success-button px-1 text-xs text-bold ml-1">
+                                            {{ totalSelected }}
+                                            </p>
+                                        </template>
+                                </button>
+                                <button v-if="totalSelected == 0"
+                                    disabled
+                                    :disabled="form.processing"
+                                    class="w-[90px] justify-center my-3 flex items-center px-2 text-xxs text-white font-mono bg-success-button-hover rounded-md"
                                     @click="approve">
                                     <BxCheckDouble class="text-lg mr-0.5" />
                                     Approve
@@ -202,7 +305,7 @@ function getAllocations() {
                             <select
                                 v-model="perPage"
                                 @change="getAllocations"
-                                class="rounded-md bg-primary-50 text-xs border-none focus:ring-primary-100">
+                                class="rounded-md bg-primary-50 text-primary-500 text-xs border-none focus:ring-primary-100">
                                 <option value="1">10</option>
                                 <option value="2">20</option>
                                 <option value="5">50</option>
@@ -214,11 +317,7 @@ function getAllocations() {
                             <Table>
                                 <template #header>
                                     <TableRow>
-                                        <TableHeaderCellLeft>
-                                            <div class="flex items-center">
-                                                <input v-model="selectAll" @click="select" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded">
-                                            </div>
-                                        </TableHeaderCellLeft>
+                                        <TableHeaderCellLeft></TableHeaderCellLeft>
                                         <TableHeaderCell>No</TableHeaderCell>
                                         <TableHeaderCell>Date Created</TableHeaderCell>
                                         <TableHeaderCell>Allocation Source</TableHeaderCell>
@@ -228,20 +327,18 @@ function getAllocations() {
                                     </TableRow>
                                 </template>
                                 <template #default>
-                                    <TableRow v-for="allocation in allocations.data" :key="allocation.id" class="border-b">
+                                    <TableRow v-for="(allocation, index) in allocations.data" :key="allocation.id" class="border-b">
                                         <TableDataCell>
                                             <div class="flex items-center">
-                                                <input type="checkbox" :value="allocation.id" v-model="selected" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                                <input type="checkbox" :value="allocation.id" v-model="selected" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-white">
                                             </div>
                                         </TableDataCell>
-                                        <TableDataCell>{{ allocation.id }}</TableDataCell>
+                                        <TableDataCell>{{ index + 1 }}</TableDataCell>
                                         <TableDataCell>{{ formatTimestamp(allocation.created_at) }}</TableDataCell>
                                         <TableDataCell>{{ allocation.allocation_source }}</TableDataCell>
                                         <TableDataCell>RM {{ allocation.total_allocation }}</TableDataCell>
-                                        <TableDataCell class="text-center">
-                                            <span class="bg-blue-100 text-blue-800 text-xs font-normal mr-2 px-2.5 py-0.5 rounded-full">
-                                            {{ allocation.status_id.name }}
-                                            </span>
+                                        <TableDataCell class="flex justify-center">
+                                            <SpanRecommendedStatus :value="allocation.status_id.name"/>
                                         </TableDataCell>
                                         <TableDataCellView class="text-center">
                                             <div class="row">
@@ -277,7 +374,7 @@ function getAllocations() {
                                     />
                                 </svg>
                                 <div class="flex justify-center">
-                                    <h2 class="text-lg font-semibold text-slate-800">
+                                    <h2 class="text-xs font-normal text-slate-800">
                                         Are you sure you want to
                                         Approve this Allocation?
                                     </h2>
@@ -285,10 +382,43 @@ function getAllocations() {
                                 <div class="mt-6 flex justify-center space-x-2">
                                     <SuccessButton
                                         @click="($event) =>approveAllocation(selected)"
-                                        class="text-xs font-extralight py-3">Yes, I'm sure</SuccessButton>
+                                        class="text-xs font-extralight">Yes, I'm sure</SuccessButton>
                                     <SecondaryButton
                                         @click="closeModalApprove"
-                                        class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
+                                        class="text-xs font-extralight">No, Cancel</SecondaryButton>
+                                </div>
+                            </div>
+                        </Modal>
+                        <!--Reject Modal-->
+                        <Modal
+                            :show="showConfirmRejectAllocationModal"
+                            @close="closeModalReject">
+                            <div class="p-6">
+                                <svg
+                                    class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200"
+                                    aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 20 20">
+                                    <path
+                                        stroke="currentColor"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                                <div class="flex justify-center">
+                                    <p class="text-xs font-normal text-slate-800">
+                                        Are You Sure Want To
+                                        Reject This Allocation?
+                                    </p>
+                                </div>
+                                <div class="mt-6 flex justify-center space-x-2">
+                                    <DangerButton @click="($event) =>rejectAllocation(selected)"
+                                        class="text-xs font-extralight">Yes, I'm sure</DangerButton>
+                                    <SecondaryButton @click="closeModalReject"
+                                        class="text-xs font-extralight">No, Cancel</SecondaryButton>
                                 </div>
                             </div>
                         </Modal>

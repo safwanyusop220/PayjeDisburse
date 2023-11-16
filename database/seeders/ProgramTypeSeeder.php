@@ -13,10 +13,10 @@ class ProgramTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        ProgramType::create(['name' => 'Individu']);
-        ProgramType::create(['name' => 'Kumpulan']);
-        ProgramType::create(['name' => 'Pecahan']);
-        ProgramType::create(['name' => 'Kelompok']);
+        ProgramType::create(['name' => 'Individual']);
+        ProgramType::create(['name' => 'Group']);
+        ProgramType::create(['name' => 'Schedule']);
+        ProgramType::create(['name' => 'Batch']);
 
 
     }

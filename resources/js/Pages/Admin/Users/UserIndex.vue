@@ -2,7 +2,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import { router } from '@inertiajs/vue3'
 
 import Table from "@/Components/Table.vue";
 import TableRow from "@/Components/TableRow.vue";
@@ -24,8 +25,17 @@ import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
 import BreadcrumbActive from "@/Components/BreadcrumbActive.vue";
 import BreadcrumbCurrent from "@/Components/BreadcrumbCurrent.vue";
 
+import { BsSearch } from "@kalimahapps/vue-icons";
+import { SuCreate } from "@kalimahapps/vue-icons";
+import { FlDelete } from "@kalimahapps/vue-icons";
 
-defineProps(['users']);
+const props = defineProps({
+    users: {
+        type: Object,
+        required: true,
+    },
+    filters: Object,
+});
 const form = useForm({})
 
 const showConfirmDeleteModal = ref(false)
@@ -46,11 +56,38 @@ const deleteUser = (id) => {
 }
 
 
-// Define the formatTimestamp method
 const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp); // Convert Unix timestamp to milliseconds
-    const formattedDate = date.toISOString().split('T')[0];
-    return formattedDate;
+  const date = new Date(timestamp);
+
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const year = date.getFullYear().toString().slice(-2);
+
+  const formattedDate = `${day}/${month}/${year}`;
+
+  return formattedDate;
+}
+
+const search = ref(props.filters.search);
+const perPage = ref(5);
+
+watch(search, (value) =>{
+    router.get("/users", {search: value, perPage: perPage.value},
+    {
+        preserveState: true,
+        replace: true
+    });
+})
+
+function getAllocations() {
+    router.get(
+        "/users",
+        { perPage: perPage.value, search: search.value },
+        {
+            preserveState: true,
+            replace: true,
+        }
+    );
 }
 </script>
 
@@ -69,7 +106,7 @@ const formatTimestamp = (timestamp) => {
                         <nav class="text-sm font-semibold" aria-label="Breadcrumb">
                             <ol class="list-none p-0 inline-flex">
                                 <li class="flex items-center">
-                                    <BreadcrumbInitial :href="route('users.index')">Home</BreadcrumbInitial>
+                                    <BreadcrumbInitial :href="route('users.index')"></BreadcrumbInitial>
                                 </li>
                                 <li class="flex items-center">
                                     <BreadcrumbCurrent>Users</BreadcrumbCurrent>
@@ -78,38 +115,58 @@ const formatTimestamp = (timestamp) => {
                         </nav>
                     </div>
                     <Content>
-                        <div class="flex justify-between mt-1 mb-3">
-                            <span class="font-medium text-primary-text text-lg mt-1.5">Users</span>
+                        <div class="flex justify-between">
+                            <span class="font-medium text-primary-text text-lg mt-2">Users</span>
 
-                            <div class="flex justify-end">
-                                <AddButton :href="route('users.create')">Create</AddButton>
-                            </div>
+                            <AddButton :href="route('users.create')">Create</AddButton>
                         </div>
 
-                        <div class="border-b-2 border-gray-200 mb-5"></div>
+                        <div class="mb-2 mt-2.5 border-b-2 border-gray-200"></div>
+
+                        <div class="mb-2 flex justify-between">
+                            <BsSearch class="absolute ml-2 text-sm text-gray-500 mt-2" />
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Search"
+                                class="pl-7 w-1/3 rounded-md text-primary-600 bg-primary-50 text-xs border-none focus:ring-primary-100"
+                            />
+
+                            <select
+                                v-model="perPage"
+                                @change="getAllocations"
+                                class="rounded-md bg-primary-50 text-xs text-primary-400 border-none focus:ring-primary-100">
+                                <option value="1">10</option>
+                                <option value="2">20</option>
+                                <option value="5">50</option>
+                                <option value="10">100</option>
+                            </select>
+                        </div>
 
                         <div class="mt-2">
-                            <Table>
+                            <Table class="w-full">
                                 <template #header>
                                     <TableRow>
-                                        <TableHeaderCellLeft>Date Created</TableHeaderCellLeft>
-                                        <TableHeaderCell>Name</TableHeaderCell>
-                                        <TableHeaderCell>Email</TableHeaderCell>
-                                        <TableHeaderCell>Latest Update</TableHeaderCell>
-                                        <TableHeaderCell>Login Info</TableHeaderCell>
-                                        <TableHeaderCell>Status</TableHeaderCell>
-                                        <TableHeaderCellRight>Action</TableHeaderCellRight>
+                                        <TableHeaderCellLeft class="w-[20px]">No</TableHeaderCellLeft>
+                                        <TableHeaderCell class="w-[150px]">Date Created</TableHeaderCell>
+                                        <TableHeaderCell class="w-[250px]">Name</TableHeaderCell>
+                                        <TableHeaderCell class="w-[250px]">Email</TableHeaderCell>
+                                        <TableHeaderCell class="w-[150px]">Latest Update</TableHeaderCell>
+                                        <TableHeaderCell class="w-[150px]">Login Info</TableHeaderCell>
+                                        <TableHeaderCell class="w-[100px]">Status</TableHeaderCell>
+                                        <TableHeaderCellRight class="w-[150px]">Action</TableHeaderCellRight>
                                     </TableRow>
                                 </template>
                                 <template #default>
-                                    <TableRow v-for="user in users.data" :key="user.id" class="border-b">
-                                        <TableDataCell>{{ formatTimestamp(user.created_at) }}</TableDataCell>
-                                        <TableDataCell>{{ user.name }}</TableDataCell>
-                                        <TableDataCell>{{ user.email }}</TableDataCell>
-                                        <TableDataCell>{{ formatTimestamp(user.updated_at) }}</TableDataCell>
-                                        <TableDataCell>{{ formatTimestamp(user.updated_at) }}</TableDataCell>
-                                        <TableDataCell>{{ user.status === 1 ? 'aktif' : 'tidak aktif' }}</TableDataCell>
-                                        <TableDataCell class="space-x-4">
+                                    <TableRow v-for="(user, index) in users.data" :key="user.id" class="border-b">
+                                        <TableDataCell class="w-[20px]">{{ index + 1 }}</TableDataCell>
+                                        <TableDataCell class="w-[100px]">{{ formatTimestamp(user.created_at) }}</TableDataCell>
+                                        <TableDataCell class="w-[200px]">{{ user.name }}</TableDataCell>
+                                        <TableDataCell class="w-[200px]">{{ user.email }}</TableDataCell>
+                                        <TableDataCell class="w-[125px]">{{ formatTimestamp(user.updated_at) }}</TableDataCell>
+                                        <TableDataCell class="w-[125px]">{{ formatTimestamp(user.updated_at) }}</TableDataCell>
+                                        <TableDataCell class="w-[100px]">{{ user.status === 1 ? 'aktif' : 'tidak aktif' }}</TableDataCell>
+                                        <TableDataCell class="w-[150px] space-x-4">
                                             <div class="row">
                                                 <div class="grid grid-cols-2 justify-items-center">
                                                     <Link :href="route('users.edit', user.id)" class="text-blue-400 hover:text-blue-600 -mr-4">

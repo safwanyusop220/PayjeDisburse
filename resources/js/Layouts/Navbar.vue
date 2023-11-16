@@ -1,25 +1,13 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { initFlowbite } from 'flowbite'
 import { usePermission } from '@/composables/permissions';
+import { McBankFill } from "@kalimahapps/vue-icons";
 
 const showingNavigationDropdown = ref(false);
 const { hasRole } = usePermission();
 
-import { onMounted } from 'vue'
-import { initFlowbite } from 'flowbite'
-
-
-onMounted(() => {
-    initFlowbite();
-})
-
-import { McBankFill } from "@kalimahapps/vue-icons";
-const isOpen = ref(false);
-
-const toggleOpen = () => {
-  isOpen = !isOpen.value;
-};
 
 </script>
 <template>

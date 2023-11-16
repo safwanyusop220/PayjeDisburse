@@ -29,7 +29,7 @@ class ProgramPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('create program') ? true : false;
+        return $user->hasPermissionTo('Create program') ? true : false;
     }
 
     /**
@@ -37,7 +37,7 @@ class ProgramPolicy
      */
     public function update(User $user, Program $post): bool
     {
-        return $user->hasPermissionTo('update program') ? true : false;
+        return $user->hasPermissionTo('Update Program') ? true : false;
     }
 
     /**

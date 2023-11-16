@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('allocations', function (Blueprint $table) {
             $table->id();
             $table->string('allocation_source');
-            $table->decimal('total_allocation');
+            $table->decimal('total_allocation', 13, 2);
             $table->decimal('allocation_balance')->nullable();
             $table->unsignedBigInteger('status')->default('1');
             $table->foreign('status')->references('id')->on('statuses')->default('1');

@@ -19,7 +19,9 @@ class PermissionController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Permissions/PermissionIndex', [
-            'permissions' => Permission::paginate(8)
+            'permissions' => Permission::orderBy('id', 'asc')
+            ->with('group')
+            ->paginate(8)
         ]);
     }
 

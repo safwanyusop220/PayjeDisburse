@@ -20,24 +20,20 @@ class PaymentController extends Controller
     public function index()
     {
         $requiredProcessPaymentCount = Receiver::with('program')->where('program_id', 23)->where('status', 3)->count();
-
         $allProgram = Program::all();
-
-        // $allReceiver->getCollection()->transform(function ($allReceiver) {
-        //     $allReceiver['requiredProcessPaymentsCount'] = $allReceiver->receivers->count();
-        // });
 
         foreach ($allProgram as $program) {
             $program['requiredProcessPaymentsCount'] = $program->receivers->count();
         }
 
+        $requestPayment = Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status_id', 5)->paginate(9);
+        $requestProcessing = Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status_id', 6)->paginate(9);
+        $requestProceed = Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status_id', 7)->paginate(9);
 
         return Inertia::render('Admin/Payments/PaymentIndex', [
-            'requiredProcessPayments' => Payment::all(),
-            'requiredProcessPayments' => Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status', 1)->paginate(9),
-            'inProgressPayments'      => Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status', 2)->paginate(9),
-            'successTransaction'      => Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status', 3)->paginate(9),
-            'failedTransaction'       => Payment::orderBy('id', 'desc')->with('program', 'receiver')->where('status', 4)->paginate(9),
+            'requestPayments' => $requestPayment,
+            'requestProcessings' => $requestProcessing,
+            'requestProceeds' => $requestProceed,
         ]);
     }
 

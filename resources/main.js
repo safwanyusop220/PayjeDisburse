@@ -4,7 +4,7 @@ import Router from 'vue-router'
 
 import Dashboard from '@/components/Dashboard'
 import DashboardHome from '@/pages/Home'
-
+import MoneySpinner from 'v-money-spinner'
 import store from './store'
 
 import '@/assets/css/tailwind.css'

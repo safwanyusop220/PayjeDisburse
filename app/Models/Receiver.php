@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Receiver extends Model
 {
     use HasFactory;
+    const STATUS_RECOMMENDATION = 2;
     const STATUS_APPROVE = 3;
     const STATUS_REJECT = 4;
 

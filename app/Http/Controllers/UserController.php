@@ -6,6 +6,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Resources\PermissionResource;
 use App\Http\Resources\RoleResource;
 use App\Http\Resources\UserResource;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
@@ -20,39 +21,44 @@ use Spatie\Permission\Contracts\Permission;
 use Spatie\Permission\Models\Permission as ModelsPermission;
 use Spatie\Permission\Models\Role;
 use Whoops\Run;
+use Illuminate\Support\Facades\Request as FacadesRequest;
+
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
+        $perPage = FacadesRequest::input('perPage') ?: 5;
         return Inertia::render('Admin/Users/UserIndex', [
-            'users' => User::paginate(8)
+            'users' => User::query()
+                ->when(FacadesRequest::input('search'), function ($query, $search) {
+                    $query->where('name', 'like', "%{$search}%");
+                })
+                ->orderBy('id', 'desc')
+                ->paginate($perPage)
+                ->withQueryString(),
+
+            'filters' => FacadesRequest::only(['search', 'perPage'])
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(): Response
     {
+        $groups = Group::with('permissions')->get();
+        $roles = RoleResource::collection(Role::all());
+
         return Inertia::render('Admin/Users/Create', [
-            'roles' => RoleResource::collection(Role::all()),
-            'permissions' => PermissionResource::collection(ModelsPermission::all())
-        ]); 
+            'groups' => $groups,
+            'roles' => $roles
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', Rules\Password::defaults()],
         ]);
 
         $user =  User::create([
@@ -60,22 +66,12 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-        $user->syncRoles($request->input('roles.*.name'));
+        $user->syncRoles([$request->input('form.selectedRole')]);
+        // $user->syncRoles($request->input('roles.*.name'));
         $user->syncPermissions($request->input('permissions.*.name'));
         return to_route('users.index');
     }
 
-    /** 
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(User $user): Response
     {
         $user->load(['roles', 'permissions']);

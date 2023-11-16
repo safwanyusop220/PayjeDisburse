@@ -19,7 +19,8 @@ return new class extends Migration
             $table->foreign('receiver_id')->references('id')->on('receivers');
             $table->string('total_receiver')->nullable();
             $table->string('payment_date')->nullable();
-            $table->string('status')->nullable();
+            $table->unsignedBigInteger('status_id')->nullable();
+            $table->foreign('status_id')->references('id')->on('statuses');
             $table->timestamps();
         });
     }

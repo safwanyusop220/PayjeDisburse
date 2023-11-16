@@ -30,10 +30,12 @@ import TableHeaderCell from "@/Components/TableHeaderCell.vue";
 import TableDataCell from "@/Components/TableDataCell.vue";
 
 import VueMultiselect from 'vue-multiselect'
+import { onMounted } from 'vue';
 
 
 defineProps({
     permissions: Array,
+    groups: Array,
 });
 
 const form = useForm({
@@ -41,6 +43,7 @@ const form = useForm({
     description: "",
     permissions: [],
 })
+
 </script>
 
 <template>
@@ -66,79 +69,86 @@ const form = useForm({
                 </div>
                 <Content>
                     <form @submit.prevent="form.post(route('roles.store'))">
-                        <div class="mt-4">
-                            <InputLabel for="name" value="Name" />
-                            <TextInput
-                                id="name"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.name"
-                                autofocus
-                                autocomplete="username"
-                            />
-
-                            <InputError class="mt-2" :message="form.errors.name" />
+                        <div class="row mt-4">
+                            <div class="grid-cols-2">
+                                <div class="span-cols-1">
+                                    <div>
+                                        <InputLabel value="1. Name" />
+                                        <TextInput
+                                            id="name"
+                                            type="text"
+                                            class="mt-1 block w-full"
+                                            v-model="form.name"
+                                        />
+                                        <InputError class="mt-2" :message="form.errors.name" />
+                                    </div>
+                                </div>
+                                <div class="span-cols-1">
+                                    <div>
+                                        <InputLabel value="2. Description" />
+                                        <TextInput
+                                            id="description"
+                                            type="text"
+                                            class="mt-1 block w-full"
+                                            v-model="form.description"
+                                        />
+                                        <InputError class="mt-2" :message="form.errors.description" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mt-4">
-                            <InputLabel for="description" value="Description" />
-                            <TextInput
-                                id="description"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.description"
-                                autofocus
-                                autocomplete="description"
+                        
+                        <InputLabel for="Permission" value="3. Access Details" />
 
-                            />
-
-                            <InputError class="mt-2" :message="form.errors.description" />
+                        <!--All Permission-->
+                        <div class="bg-primary-100 rounded-xl px-2 pt-1 pb-2 mt-1 mr-2">
+                            <div class="">
+                                <input
+                                    type="checkbox"
+                                    class="mr-1 rounded border-primary-300 focus:ring-primary-100 px-2 text-xs"
+                                />
+                                <label class="text-xxs font-bold uppercase text-primary-700">All Permission
+                                </label>
+                            </div>
+                            
                         </div>
 
-                        <InputLabel for="Permission" value="Access Details" />
-
-                        <div class="-mt-2 mb-4">
-                            <div class="grid grid-cols-3 space-x-4">
-                                <template v-for="permission in permissions">
-                                    <div class="bg-primary-50 rounded-xl px-2 py-2 mt-4">
-                                        <div>
-                                            <div class="col">
-                                                <div class="row">
-                                                    <div class=" items-center" >
-                                                    <input
-                                                        :key="permission.id"
-                                                        type="checkbox"
-                                                        :id="permission.id"
-                                                        v-model="form.permissions"
-                                                        :value="permission"
-                                                        class="mr-2 rounded px-2 text-xs"
-                                                    />
-                                                    <label class="text-xs" :for="permission.id">{{ permission.name.toUpperCase() }}</label>
-                                                
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="row">
-                                                    <div class="items-center" >
-                                                    <input
-                                                        :key="permission.id"
-                                                        type="checkbox"
-                                                        :id="permission.id"
-                                                        v-model="form.permissions"
-                                                        :value="permission"
-                                                        class="ml-3 mr-2 rounded px-2 text-xs"
-                                                    />
-                                                    <label class="text-xs" :for="permission.id">{{ permission.name.toUpperCase() }}</label>
-                                                
-                                                    </div>
-                                                </div>
-                                            </div>
+                        <!--Access Details-->
+                        <div class="">
+                            <div class="grid grid-cols-3">
+                                <template v-for="group in groups">
+                                    <div class="bg-primary-100 rounded-xl px-2 py-2 mt-2 mr-2">
+                                        <div class="">
+                                            <input
+                                                :key="group.id"
+                                                type="checkbox"
+                                                :id="group.id"
+                                                :value="group.id"
+                                                class="mr-1 rounded border-primary-300 focus:ring-primary-100 px-2 text-xs"
+                                            />
+                                            <label class="text-xxs font-bold text-primary-700" :for="group.id">
+                                                {{ group.name.toUpperCase() }}
+                                            </label>
                                         </div>
+                                        
+                                        <template v-for="permission in group.permissions">                                            
+                                            <div class="ml-5 -mt-1.5">
+                                                <input
+                                                    :key="permission.id"
+                                                    type="checkbox"
+                                                    :id="permission.name"
+                                                    v-model="form.permissions"
+                                                    :value="permission"
+                                                    class="mr-1 rounded border-primary-300 focus:ring-primary-100 px-2 text-xs"
+                                                />
+                                                <label class="text-xxs font-medium text-primary-700" :for="permission.id">{{ permission.name }}</label>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
                         </div>
-
+                        
                         <!--Button Submit-->
                         <div class="flex items-center justify-end space-x-2 mt-4 mb-2">
                             <Link :href="route('roles.index')" class="flex items-center py-2 px-2 text-xs text-white font-mono bg-danger-button hover:bg-danger-button-hover rounded-md">

@@ -48,22 +48,22 @@ onMounted(() => {
         
 
         <div class="flex justify-between mt-14">
-            <div class="flex items-center">
-                <span class="font-bold text-black text-xl mr-1">Dashboard</span>
-            </div>
-
-            
-
-            <nav class="text-sm font-semibold" aria-label="Breadcrumb">
-                <ol class="list-none p-0 inline-flex">
-                    <li class="flex items-center">
-                        <BreadcrumbInitial :href="route('dashboards.index')">Home</BreadcrumbInitial>
-                    </li>
-                    <li class="flex items-center">
-                        <BreadcrumbCurrent>Dashbaord</BreadcrumbCurrent>
-                    </li>
-                </ol>
-            </nav>
+            <div class="flex justify-between pt-4">
+                    <nav class="text-sm font-semibold" aria-label="Breadcrumb">
+                        <ol class="inline-flex list-none">
+                            <li class="flex items-center">
+                                <BreadcrumbInitial
+                                    :href="route('dashboard')"
+                                ></BreadcrumbInitial>
+                            </li>
+                            <li class="flex items-center">
+                                <BreadcrumbCurrent
+                                    >Dashboard</BreadcrumbCurrent
+                                >
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
         </div>
         <div class="">
             <div class=" mx-auto">

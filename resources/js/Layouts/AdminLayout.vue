@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue';
+import { onMounted } from 'vue'
+import { initFlowbite } from 'flowbite'
+
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -8,17 +11,6 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
 import SidebarLink from "@/Components/SidebarLink.vue";
 import { usePermission } from '@/composables/permissions';
-
-const showingNavigationDropdown = ref(false);
-const { hasRole } = usePermission();
-
-import { onMounted } from 'vue'
-import { initFlowbite } from 'flowbite'
-
-
-onMounted(() => {
-    initFlowbite();
-})
 
 import { CgChevronDown } from "@kalimahapps/vue-icons";
 import { PhFillContactlessPayment } from "@kalimahapps/vue-icons";
@@ -29,7 +21,12 @@ import Sidebar from './Sidebar.vue';
 import Navbar from './Navbar.vue';
 import Footer from './Footer.vue';
 
+const showingNavigationDropdown = ref(false);
+const { hasRole } = usePermission();
 
+onMounted(() => {
+    initFlowbite();
+})
 
 const isOpen = ref(false);
 
@@ -45,7 +42,7 @@ const toggleOpen = () => {
         <Sidebar/>
 
         <!--<div class="ml-60 px-6 pt-6 2xl:container">-->
-        <div class="ml-60 px-6 h-screen bg-primary-100">
+        <div class="ml-52 px-6 min-h-screen pb-1 bg-primary-50">
             <slot/>
         </div>
         <!--<Footer/>-->

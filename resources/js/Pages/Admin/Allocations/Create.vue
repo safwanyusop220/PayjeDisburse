@@ -11,6 +11,11 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import GridLayoutCol5 from '@/Components/GridLayoutCol5.vue';
+import TextInputXxs from '@/Components/TextInputXxs.vue';
+import TextInputMoneyXxs from '@/Components/TextInputMoneyXxs.vue';
+import TextInputMoneySpinner from '@/Components/TextInputMoneySpinner.vue';
+
 
 
 import Table from "@/Components/Table.vue";
@@ -18,12 +23,12 @@ import TableRow from "@/Components/TableRow.vue";
 import TableHeaderCell from "@/Components/TableHeaderCell.vue";
 import TableDataCell from "@/Components/TableDataCell.vue";
 
-import Content from "@/Components/Content.vue";
 
 import Modal from "@/Components/Modal.vue";
 import DangerButton from "@/Components/DangerButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import SuccessButton from "@/Components/SuccessButton.vue";
+import Content from "@/Components/Content.vue";
 
 // BreadCrumb
 import BreadcrumbInitial from "@/Components/BreadcrumbInitial.vue";
@@ -38,6 +43,8 @@ import { BsSendCheck } from "@kalimahapps/vue-icons";
 import { IcCancel } from "@kalimahapps/vue-icons";
 import { QuSendCancelled } from "@kalimahapps/vue-icons";
 import { SuCreate } from "@kalimahapps/vue-icons";
+import { ClCircleWarning } from "@kalimahapps/vue-icons";
+
 
 const form = useForm({
     allocation_source: "",
@@ -50,20 +57,30 @@ const props = defineProps({
     refBanks: Array,
 })
 
-// Modal Approve
+const isFormValid = computed(() => {
+  const allocationSourceError = form.allocation_source === '';
+  const bankError = form.bank === '';
+  const accountNumberError = form.account_number === '';
+  const totalAllocationError = form.total_allocation === '';
+  return !allocationSourceError && !bankError && !accountNumberError && !totalAllocationError;
+});
+
 const showConfirmCreateAllocationModal = ref(false)
 
-// Method for "Luluskan" button
 const create = () => {
-    showConfirmCreateAllocationModal.value = true;
-};
+    if (isFormValid.value) {
+        showConfirmCreateAllocationModal.value = true;
+  }
 
+};
 
 const closeModalCreate = () => {
     showConfirmCreateAllocationModal.value = false;
 }
 
 const createAllocation = (id) => {
+    //console.log(isFormValid.value);
+
     try{
         form.post(route('allocations.store'), {
             onSuccess: (page) => {
@@ -75,11 +92,12 @@ const createAllocation = (id) => {
         })
     }catch (err){
         console.log(err)
+        
     }
+
     showConfirmCreateAllocationModal.value = false;
 };
 
-// Approve SweetAllert
 const Toast = Swal.mixin({
   toast: true,
   position: 'top-end',
@@ -92,8 +110,19 @@ const Toast = Swal.mixin({
     toast.addEventListener('mouseleave', Swal.resumeTimer);
   },
 });
-
-
+const config = {
+  spinner: false,
+  step: 10,
+  min: 0,
+  max: 9999999999,
+  precision: 2,
+  decimal: ".",
+  thousands: ",",
+  masked: false,
+  disableNegative: true,
+  align: "start",
+  prefix: "RM "
+};
 </script>
 
 <template>
@@ -120,55 +149,56 @@ const Toast = Swal.mixin({
                 <form @submit.prevent="submit">
                     <Content>
                         <!-- Allocation Source -->
-                        <div class="row py-2 px-4">
+                        <div class="row py-2 px-4 mb-2">
                             <div class="grid grid-cols-7">
                                 <div class="col-span-1">
-                                    <InputLabel for="allocation_source" class="mt-4" value="Allocation Name" />
+                                    <InputLabel class="mt-4" value="Allocation Name" />
                                 </div>
                                 <div class="col-span-3">
-                                    <TextInput
+                                    <TextInputXxs
                                         id="allocation_source"
                                         type="text"
-                                        class="mt-2 block w-full"
+                                        class="mt-2 block w-2/3"
                                         v-model="form.allocation_source"
-                                        autofocus
-                                        autocomplete="username"
-                                        placeholder="Wakaf"
                                     />
+                                    <div v-if="form.allocation_source === ''" class="text-red-500 text-xxs-custom ml-2">*Allocation Name is required</div>
                                     <InputError class="mt-2" :message="form.errors.allocation_source" />
                                 </div>
                             </div>
                         </div>
                         <!--Bank-->
-                        <div class="row px-4">
+                        <div class="row px-4 mb-2">
                             <div class="grid grid-cols-7">
                                 <div class="col-span-1">
                                     <InputLabel class="mt-1" value="Bank" />
                                 </div>
                                 <div class="col-span-3">
-                                    <select class="rounded-md text-xs border border-gray-300 w-4/5" v-model="form.bank" id="refBank">
-                                        <option value="" disabled>Pilih Bank</option>
-                                        <option v-for="refBank in refBanks" :key="refBank.id" :value="refBank.id">{{ refBank.name }}</option>
-                                    </select>
+                                    <div class="col-span-2">
+                                        <select class="h-[30px] text-primary-700 border-none bg-primary-50 text-xs rounded-lg w-2/3" v-model="form.bank" id="refBank">
+                                            <option value="" disabled>Choose Bank</option>
+                                            <option v-for="refBank in refBanks" :key="refBank.id" :value="refBank.id">{{ refBank.name }}
+                                            </option>
+                                        </select>
+                                        <div v-if="form.bank === ''" class="text-red-500 text-xxs-custom ml-2">*Bank is required</div>
+                                        <InputError class="mt-2" :message="form.errors.bank" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <!--Account Number-->
-                        <div class="row px-4">
+                        <div class="row px-4 mb-2">
                             <div class="grid grid-cols-7">
                                 <div class="col-span-1">
-                                    <InputLabel for="total_allocation" class="mt-3" value="Account Number" />
+                                    <InputLabel for="account_number" class="mt-3" value="Account Number" />
                                 </div>
                                 <div class="col-span-3">
-                                    <TextInput
-                                        id="total_allocation"
+                                    <TextInputXxs
+                                        id="account_number"
                                         type="number"
-                                        class="mt-2 block w-full"
+                                        class="mt-2 block w-2/3"
                                         v-model="form.account_number"
-                                        autofocus
-                                        autocomplete="username"
-                                        placeholder="161024581113"
                                     />
+                                    <div v-if="form.account_number === ''" class="text-red-500 text-xxs-custom ml-2">*Account number is required</div>
                                     <InputError class="mt-2" :message="form.errors.account_number" />
                                 </div>
                             </div>
@@ -177,19 +207,19 @@ const Toast = Swal.mixin({
                         <div class="row px-4 mb-4">
                             <div class="grid grid-cols-7">
                                 <div class="col-span-1">
-                                    <InputLabel for="total_allocation" class="mt-3" value="Total Allocation" />
+                                    <InputLabel  class="mt-3" value="Total Allocation" />
                                 </div>
+                                
+                                
                                 <div class="col-span-3">
-                                    <TextInput
+                                    <v-money-spinner
                                         id="total_allocation"
-                                        type="number"
-                                        class="mt-2 block w-full"
+                                        class="mt-2 w-2/3 rounded-xl text-xs bg-primary-50 block border border-none focus:ring-0 text-primary-700 focus:ring-primary-50 focus:border-blue-500"
                                         v-model="form.total_allocation"
-                                        autofocus
-                                        autocomplete="username"
-                                        placeholder="RM 800,000.00"
-                                    />
+                                        v-bind="config">
+                                    </v-money-spinner>
 
+                                    <div v-if="form.total_allocation === ''" class="text-red-500 text-xxs-custom ml-2">*Total allocation is required</div>
                                     <InputError class="mt-2" :message="form.errors.total_allocation" />
                                 </div>
                             </div>
@@ -205,20 +235,20 @@ const Toast = Swal.mixin({
                                 Submit
                             </button>
                         </div>
-                        <!---Approve Modal-->
+                        <!---Add Modal-->
                         <Modal :show="showConfirmCreateAllocationModal" @close="closeModalCreate">
-                            <div class="p-6">
-                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                </svg>
+                            <div class="py-4">
+                                <div class="justify-center flex">
+                                    <ClCircleWarning class="text-5xl text-gray-400"/>
+                                </div>
                                 <div class="flex justify-center">
-                                    <h2 class="text-lg font-semibold text-slate-800">
-                                    Are you sure you want to Create this Allocation?
-                                    </h2>
+                                    <p class="text-xs font-normal text-slate-800 mt-3">
+                                        Are you sure you want to Create this Allocation?
+                                    </p>
                                 </div>
                                 <div class="mt-6 flex justify-center space-x-2">
-                                    <SuccessButton @click="$event => createAllocation()" class="text-xs font-extralight py-3">Yes, I'm sure</SuccessButton>
-                                    <SecondaryButton @click="closeModalCreate" class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
+                                    <SuccessButton @click="$event => createAllocation()" class="text-xs font-extralight">Yes, I'm sure</SuccessButton>
+                                    <SecondaryButton @click="closeModalCreate" class="text-xs font-extralight">No, Cancel</SecondaryButton>
                                 </div>
                             </div>
                         </Modal>

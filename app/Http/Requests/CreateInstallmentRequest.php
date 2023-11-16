@@ -22,10 +22,10 @@ class CreateInstallmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'program_id' => ['nullable', 'string'],
+            'program_id'                 => ['nullable', 'string'],
             'installment_payment_date[]' => ['nullable', 'string'],
-            'amount[]' => ['nullable', 'string'],
-            'installment_name[]' => ['nullable', 'string'],
+            'amount[]'                   => ['nullable', 'string'],
+            'installment_name[]'         => ['nullable', 'string'],
         ];
     }
 }

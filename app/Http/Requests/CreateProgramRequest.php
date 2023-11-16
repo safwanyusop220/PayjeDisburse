@@ -24,10 +24,10 @@ class CreateProgramRequest extends FormRequest
         return [
             'name'            => ['required', 'string'],
             'type_id'         => ['nullable', 'integer'],
-            'allocation_rate' => ['nullable', 'integer'],
+            'allocation_rate' => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'numeric', 'max:999999999'],
             'status'          => ['nullable', 'integer'],
             'latest_payment'  => ['nullable', 'string'],
-            'payment_date'    => ['nullable', 'string'],
+            'payment_date'    => ['nullable', 'date'],
             'total_month'     => ['nullable', 'integer'],
             'total_year'      => ['nullable', 'integer'],
             'end_date'        => ['nullable', 'string'],

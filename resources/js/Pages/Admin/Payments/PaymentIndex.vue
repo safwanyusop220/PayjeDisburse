@@ -35,136 +35,24 @@ import { SuCreate } from "@kalimahapps/vue-icons";
 import { McFileExportLine } from "@kalimahapps/vue-icons";
 import { CaDocumentImport } from "@kalimahapps/vue-icons";
 
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
+
 defineProps([
-    'requiredProcessPayments',
-    'inProgressPayments',
-    'successTransaction',
-    'failedTransaction',
+    'requestPayments',
+    'requestProcessings',
+    'requestProceeds',
     'requiredProcessPaymentsCount',
 ])
-
-// Delete Receiver
-const showConfirmDeleteModal = ref(false)
-const selectedId = ref(null);
-
-
-const confirmDelete = (id) => {
-    selectedId.value = id;
-    console.log(id)
-    showConfirmDeleteModal.value = true;
-}
-
-const closeModal = () => {
-    showConfirmDeleteModal.value = false;
-}
-
-const deleteReceiver = () => {
-    try{
-        form.delete(route('receivers.destroy', selectedId.value), {
-            onSuccess: (page) => {
-            Toast.fire({
-                icon: 'success',
-                title: 'Receiver has successfully Deleted'
-            })
-            },
-        })
-    }catch (err){
-        console.log(err)
-    }
-    showConfirmDeleteModal.value = false;
-};
-
-// Delete SweetAllert
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  width: 400,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  },
-});
-
-
-
-// Define the formatTimestamp method
-const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp); // Convert Unix timestamp to milliseconds
-    const formattedDate = date.toISOString().split('T')[0];
-    return formattedDate;
-}
-
-//getStatusText method 
-const getStatusText = (status) => {
-    switch (status) {
-        case 1:
-            return 'Sedang Diproses';
-        case 2:
-            return 'Telah Diproses';
-        case 3:
-            return 'Diluluskan';
-        case 4:
-            return 'Ditolak';
-        default:
-            return 'Unknown Status';
-    }
-};
-
-//getProgramTypeText method 
-const getTypeText = (type) => {
-    switch (type) {
-        case 1:
-            return 'Individu';
-        case 2:
-            return 'Kumpulan';
-        case 3:
-            return 'Pecahan';
-        case 4:
-            return 'Kelompok';
-        default:
-            return 'Unknown Status';
-    }
-};
 
 const form = useForm({
     select_users_file : ""
 })
-// Modal Approve
-const showConfirmCreateAllocationModal = ref(false)
 
-// Method for "Luluskan" button
-const create = () => {
-    const mainFormUsers = document.getElementById('mainFormUsers');
-        const data = new FormData(mainFormUsers);
-    form.post(route('payments.import', data));
+const activeTab = ref('request');
+
+const activateTab = (tabName) => {
+  activeTab.value = tabName;
 };
-
-
-const closeModalCreate = () => {
-    showConfirmCreateAllocationModal.value = false;
-}
-
-const createProgram = () => {
-    const mainFormUsers = document.getElementById('mainFormUsers');
-        const data = new FormData(mainFormUsers);
-    try{
-        form.post(route('payments.import', data), {
-            onSuccess: (page) => {
-            Toast.fire({
-                icon: 'success',
-                title: 'Program has successfully approved',
-            })
-            },
-        })
-    }catch (err){
-        console.log(err)
-    }
-};
-
-
 
 </script>
 
@@ -178,66 +66,67 @@ const createProgram = () => {
                     <nav class="text-sm font-semibold" aria-label="Breadcrumb">
                         <ol class="list-none p-0 inline-flex">
                             <li class="flex items-center">
-                                <BreadcrumbInitial :href="route('payments.index')">Home</BreadcrumbInitial>
+                                <BreadcrumbInitial :href="route('payments.index')"></BreadcrumbInitial>
                             </li>
                             <li class="flex items-center">
-                                <BreadcrumbCurrent>Requires Processing</BreadcrumbCurrent>
+                                <BreadcrumbActive :href="route('payments.index')">Payment</BreadcrumbActive>
+                            </li>
+                            <li class="flex items-center">
+                                <BreadcrumbCurrent>
+                                    <div>
+                                        {{ activeTab === 'request' ? 'Request' : '' }}
+                                        {{ activeTab === 'processing' ? 'Processing' : '' }}
+                                        {{ activeTab === 'proceed' ? 'Proceed' : '' }}
+                                    </div>
+                                </BreadcrumbCurrent>
                             </li>
                         </ol>
                     </nav>
                 </div>
+                
                 <Content>
                     <div>
-                        <div class="mb-4 mt-4 flex justify-between">
+                        <div class="mb-4 mt-1 flex justify-between">
+                            <ul class="flex px-1 space-x-1 rounded-xl bg-primary-500 py-1" id="myTab" data-tabs-toggle="#myTabContent" role="tablist">
+                                <li role="presentation">
+                                    <button class="w-[110px] rounded-lg px-2 py-1 leading-7 text-xxs font-medium"
+                                            :class="{ 'bg-white': activeTab === 'request', '': activeTab === 'request','text-primary-700': activeTab === 'request','hover:text-primary-700': activeTab === 'request','text-white': activeTab !== 'request', 'hover:bg-primary-400': activeTab !== 'request','hover:text-white': activeTab !== 'request', }"
+                                            id="request-tab" data-tabs-target="#request" type="button" role="tab" aria-controls="request" aria-selected="false"
+                                            @click="activateTab('request')">
+                                        Request
+                                    </button>
+                                </li>
+
+                                <li role="presentation">
+                                    <button class="w-[110px] rounded-lg px-2 py-1 leading-7 text-xxs font-medium"
+                                            :class="{ 'bg-white': activeTab === 'processing','text-primary-700': activeTab === 'processing','hover:text-primary-700': activeTab === 'processing','text-white': activeTab !== 'processing', 'hover:bg-primary-400': activeTab !== 'processing','hover:text-white': activeTab !== 'processing', }"
+                                            id="processing-tab" data-tabs-target="#processing" type="button" role="tab" aria-controls="processing" aria-selected="false"
+                                            @click="activateTab('processing')">
+                                        Processing
+                                    </button>
+                                </li>
+
+                                <li role="presentation">
+                                    <button class="w-[110px] rounded-lg px-2 py-1 leading-7 text-xxs font-medium"
+                                            :class="{ 'bg-white': activeTab === 'proceed','text-primary-700': activeTab === 'proceed','hover:text-primary-700': activeTab === 'proceed','text-white': activeTab !== 'proceed', 'hover:bg-primary-400': activeTab !== 'proceed','hover:text-white': activeTab !== 'proceed', }"
+                                            id="proceed-tab" data-tabs-target="#proceed" type="button" role="tab" aria-controls="proceed" aria-selected="false"
+                                            @click="activateTab('proceed')">
+                                        Proceed
+                                    </button>
+                                </li>
+
+                            </ul>
                             <div>
-                                <ul class="flex flex-wrap  text-xs font-medium text-center" id="myTab" data-tabs-toggle="#myTabContent" role="tablist">
-                                    <li class="" role="presentation">
-                                        <button class="rounded-l-lg inline-block w-full p-3 bg-primary-100 hover:bg-primary-200" id="profile-tab" data-tabs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Required Process</button>
-                                    </li>
-                                    <li class="" role="presentation">
-                                        <button class="inline-block w-full p-3 bg-primary-100  hover:bg-primary-200" id="dashboard-tab" data-tabs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="false">In Progress</button>
-                                    </li>
-                                    <li class="" role="presentation">
-                                        <button class="inline-block w-full p-3 bg-primary-100  hover:bg-primary-200" id="settings-tab" data-tabs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">Success Transaction</button>
-                                    </li>
-                                    <li role="presentation">
-                                        <button class="rounded-r-lg inline-block w-full p-3 bg-primary-100  hover:bg-primary-200" id="contacts-tab" data-tabs-target="#contacts" type="button" role="tab" aria-controls="contacts" aria-selected="false">Failed Transaction</button>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="flex justify-between">
-                                <!--Tabs<form id="mainFormUsers" enctype="multipart/form-data">
-                                    
-                                    <input type="file" name="select_users_file"/>
-
-                                    <input type="submit" @click.prevent="create" name="upload" class="flex items-center py-2 px-2 text-xs text-white font-mono bg-success-button hover:bg-success-button-hover rounded-md">
-
-                                </form>-->
-                                <Modal :show="showConfirmCreateAllocationModal" @close="closeModalCreate">
-                                    <div class="p-6">
-                                        <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                        </svg>
-                                        <div class="flex justify-center">
-                                            <h2 class="text-lg font-semibold text-slate-800">
-                                            Are you sure you want add this program?
-                                            </h2>
-                                        </div>
-                                        <div class="mt-6 flex justify-center space-x-2">
-                                            <SuccessButton @click="createProgram" class="text-xs font-extralight py-3">Yes, I'm sure</SuccessButton>
-                                            <SecondaryButton @click="closeModalCreate" class="text-xs font-extralight py-3">No, Cancel</SecondaryButton>
-                                        </div>
-                                    </div>
-                                </Modal>
-                                <a :href="route('payments.export')" class="button ml-4 flex items-center px-3 text-xs text-white font-mono bg-primary-button hover:bg-primary-button-hover rounded-md">
+                                <a :href="route('payments.export')" class="button ml-4 flex items-center mt-2 px-3 py-2 text-xs text-white font-mono bg-primary-500 hover:bg-primary-600 rounded-md">
                                     <McFileExportLine class="text-lg mr-0.5" />
                                     Exports
                                 </a>
                             </div>
                         </div>
+                        
                         <div id="myTabContent">
-
-                            <div class="hidden rounded-lg bg-gray-50" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                            <!--Request-->
+                            <div class="hidden rounded-lg bg-gray-50" id="request" role="tabpanel" aria-labelledby="request-tab">
                                 <div class="mt-2">
                                     <Table>
                                         <template #header>
@@ -249,7 +138,52 @@ const createProgram = () => {
                                             </TableRow>
                                         </template>
                                         <template #default>
-                                            <TableRow v-for="payment in requiredProcessPayments.data" :key="payment.id" class="border-b">
+                                            <TableRow v-for="payment in requestPayments.data" :key="payment.id" class="border-b">
+                                                <TableDataCell>{{ payment.id }}</TableDataCell>
+                                                <TableDataCell> {{ payment.payment_date }}</TableDataCell>
+                                                <TableDataCell v-if="payment.receiver_id === null">
+                                                    {{ payment.program.name }}
+                                                </TableDataCell>
+                                                <TableDataCell v-else>
+                                                    {{ payment.receiver.name }}
+                                                </TableDataCell>
+                                                <TableDataCell v-if="payment.receiver_id === null">
+                                                    <Link
+                                                        v-if="payment.total_receiver > 0"
+                                                        :href="route('payments.programReceiverList', payment.program.id)"
+                                                        class="underline text-blue-600"
+                                                        >
+                                                        {{ payment.total_receiver }}
+                                                    </Link>
+                                                    <span v-else>
+                                                        {{ payment.total_receiver }}
+                                                    </span>
+                                                </TableDataCell>
+                                                <TableDataCell v-else>
+                                                    1
+                                                </TableDataCell>
+                                            </TableRow>
+                                        </template>
+                                    </Table>
+                                    <div class="text-center mx-auto m-2 p-2">
+                                        <TablePagination :links="requestPayments.links" />
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Processing-->
+                            <div class="hidden rounded-lg bg-gray-50" id="processing" role="tabpanel" aria-labelledby="processing-tab">
+                                <div class="mt-2">
+                                    <Table>
+                                        <template #header>
+                                            <TableRow>
+                                                <TableHeaderCellLeft>No</TableHeaderCellLeft>
+                                                <TableHeaderCell>Payment Date</TableHeaderCell>
+                                                <TableHeaderCell>Program/Receiver Name</TableHeaderCell>
+                                                <TableHeaderCellRightTextStart>Total Receiver</TableHeaderCellRightTextStart>
+                                            </TableRow>
+                                        </template>
+                                        <template #default>
+                                            <TableRow v-for="payment in requestProcessings.data" :key="payment.id" class="border-b">
                                                 <TableDataCell>{{ payment.id }}</TableDataCell>
                                                 <TableDataCell> {{ payment.payment_date }}</TableDataCell>
                                                 <TableDataCell v-if="payment.receiver_id === null">
@@ -270,11 +204,12 @@ const createProgram = () => {
                                         </template>
                                     </Table>
                                     <div class="text-center mx-auto m-2 p-2">
-                                        <TablePagination :links="requiredProcessPayments.links" />
+                                        <TablePagination :links="requestProcessings.links" />
                                     </div>
                                 </div>
                             </div>
-                            <div class="hidden rounded-lg bg-gray-50 dark:bg-gray-800" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                            <!--Proceed-->
+                            <div class="hidden rounded-lg bg-gray-50" id="proceed" role="tabpanel" aria-labelledby="proceed-tab">
                                 <div class="mt-2">
                                     <Table>
                                         <template #header>
@@ -286,7 +221,7 @@ const createProgram = () => {
                                             </TableRow>
                                         </template>
                                         <template #default>
-                                            <TableRow v-for="payment in inProgressPayments.data" :key="payment.id" class="border-b">
+                                            <TableRow v-for="payment in requestProceeds.data" :key="payment.id" class="border-b">
                                                 <TableDataCell>{{ payment.id }}</TableDataCell>
                                                 <TableDataCell> {{ payment.payment_date }}</TableDataCell>
                                                 <TableDataCell v-if="payment.receiver_id === null">
@@ -301,87 +236,13 @@ const createProgram = () => {
                                                     </Link>
                                                 </TableDataCell>
                                                 <TableDataCell v-else>
-                                                    {{ payment.total_receiver }}
+                                                    1
                                                 </TableDataCell>
                                             </TableRow>
                                         </template>
                                     </Table>
                                     <div class="text-center mx-auto m-2 p-2">
-                                        <TablePagination :links="inProgressPayments.links" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="hidden rounded-lg bg-gray-50 dark:bg-gray-800" id="settings" role="tabpanel" aria-labelledby="settings-tab">
-                                <div class="mt-2">
-                                    <Table>
-                                        <template #header>
-                                            <TableRow>
-                                                <TableHeaderCellLeft>No</TableHeaderCellLeft>
-                                                <TableHeaderCell>Payment Date</TableHeaderCell>
-                                                <TableHeaderCell>Program/Receiver Name</TableHeaderCell>
-                                                <TableHeaderCellRightTextStart>Total Receiver</TableHeaderCellRightTextStart>
-                                            </TableRow>
-                                        </template>
-                                        <template #default>
-                                            <TableRow v-for="payment in successTransaction.data" :key="payment.id" class="border-b">
-                                                <TableDataCell>{{ payment.id }}</TableDataCell>
-                                                <TableDataCell> {{ payment.payment_date }}</TableDataCell>
-                                                <TableDataCell v-if="payment.receiver_id === null">
-                                                    {{ payment.program.name }}
-                                                </TableDataCell>
-                                                <TableDataCell v-else>
-                                                    {{ payment.receiver.name }}
-                                                </TableDataCell>
-                                                <TableDataCell v-if="payment.receiver_id === null">
-                                                    <Link :href="route('payments.programReceiverList', payment.program.id)" class="underline text-blue-600 ">
-                                                        {{ payment.total_receiver }}
-                                                    </Link>
-                                                </TableDataCell>
-                                                <TableDataCell v-else>
-                                                    {{ payment.total_receiver }}
-                                                </TableDataCell>
-                                            </TableRow>
-                                        </template>
-                                    </Table>
-                                    <div class="text-center mx-auto m-2 p-2">
-                                        <TablePagination :links="successTransaction.links" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="hidden rounded-lg bg-gray-50 dark:bg-gray-800" id="contacts" role="tabpanel" aria-labelledby="contacts-tab">
-                                <div class="mt-2">
-                                    <Table>
-                                        <template #header>
-                                            <TableRow>
-                                                <TableHeaderCellLeft>No</TableHeaderCellLeft>
-                                                <TableHeaderCell>Payment Date</TableHeaderCell>
-                                                <TableHeaderCell>Program/Receiver Name</TableHeaderCell>
-                                                <TableHeaderCellRightTextStart>Total Receiver</TableHeaderCellRightTextStart>
-                                            </TableRow>
-                                        </template>
-                                        <template #default>
-                                            <TableRow v-for="payment in failedTransaction.data" :key="payment.id" class="border-b">
-                                                <TableDataCell>{{ payment.id }}</TableDataCell>
-                                                <TableDataCell> {{ payment.payment_date }}</TableDataCell>
-                                                <TableDataCell v-if="payment.receiver_id === null">
-                                                    {{ payment.program.name }}
-                                                </TableDataCell>
-                                                <TableDataCell v-else>
-                                                    {{ payment.receiver.name }}
-                                                </TableDataCell>
-                                                <TableDataCell v-if="payment.receiver_id === null">
-                                                    <Link :href="route('payments.programReceiverList', payment.program.id)" class="underline text-blue-600 ">
-                                                        {{ payment.total_receiver }}
-                                                    </Link>
-                                                </TableDataCell>
-                                                <TableDataCell v-else>
-                                                    {{ payment.total_receiver }}
-                                                </TableDataCell>
-                                            </TableRow>
-                                        </template>
-                                    </Table>
-                                    <div class="text-center mx-auto m-2 p-2">
-                                        <TablePagination :links="failedTransaction.links" />
+                                        <TablePagination :links="requestProceeds.links" />
                                     </div>
                                 </div>
                             </div>

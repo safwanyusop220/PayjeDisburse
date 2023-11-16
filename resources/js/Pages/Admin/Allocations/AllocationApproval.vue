@@ -11,6 +11,8 @@ import InputError from "@/Components/InputError.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
+import InputBold from "@/Components/InputBold.vue";
+import InputMoneyBold from "@/Components/InputMoneyBold.vue";
 
 import Table from "@/Components/Table.vue";
 import TableRow from "@/Components/TableRow.vue";
@@ -73,7 +75,6 @@ const getStatusText = (status) => {
     }
 };
 
-// Hide Inpu
 const shouldShowInput = ref(false);
 
 watch(
@@ -86,10 +87,8 @@ watch(
 const disableButtonReject = ref(true);
 const disableButtonApprove = ref(true);
 
-// Modal Approve
 const showConfirmApproveAllocationModal = ref(false);
 
-// Method for "Luluskan" button
 const approve = () => {
     showConfirmApproveAllocationModal.value = true;
 };
@@ -102,10 +101,11 @@ const approveAllocation = (id) => {
     try {
         form.put(route("allocations.approve", props.allocation?.id), {
             onSuccess: (page) => {
-                Toast.fire({
-                    icon: "success",
-                    title: "Allocation has successfully approved",
-                });
+                Swal.fire(
+                    'Success',
+                    'Allocation Has Successfully Approved!',
+                    'success'
+                )
                 showConfirmApproveAllocationModal.value = false;
                 disableButtonReject.value = false
                 disableButtonApprove.value = false
@@ -221,96 +221,75 @@ const rejectAllocation = async (id) => {
                         <div class="grid grid-cols-2">
                             <div>
                                 <!---Allocation Source-->
-                                <div class="px-4 py-2">
+                                <div class="px-4 mb-2">
                                     <div class="col">
-                                        <div class="grid grid-cols-2">
-                                            <InputLabel
-                                                for="allocation_source"
-                                                class="mt-3 font-extrabold"
-                                                value="Allocation Source"
-                                            />
+                                        <div class="grid grid-cols-3">
+                                            <InputLabel value="Allocation Source"/>
 
-                                            <TextInput
-                                                id="allocation_source"
-                                                type="text"
-                                                class="mt-2 block w-full text-xs -ml-6"
-                                                v-model="form.allocation_source"
-                                                autofocus
-                                                autocomplete="username"
-                                                disabled
-                                            />
+                                            <div class="col-span-2">
+                                                <InputBold :value="allocation.allocation_source"/>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <!--Total Allocation-->
-                                <div class="px-4">
-                                    <div class="row">
-                                        <div class="col">
-                                            <div class="grid grid-cols-2">
-                                                <InputLabel
-                                                    for="total_allocation"
-                                                    class="mt-1.5 font-extrabold"
-                                                    value="Total Allocation"
-                                                />
-                                                
-                                                <TextInput
-                                                    id="allocation_source"
-                                                    type="text"
-                                                    class="mt-2 block w-full text-xs -ml-6"
-                                                    v-model="form.total_allocation"
-                                                    autofocus
-                                                    autocomplete="username"
-                                                    disabled
-                                                />
+                                <!---Allocation Source-->
+                                <div class="px-4 mb-2">
+                                    <div class="col">
+                                        <div class="grid grid-cols-3">
+                                            <InputLabel value="Total Allocation"/>
+
+                                            <div class="col-span-2">
+                                                <InputMoneyBold :value="allocation.total_allocation"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!---Bank Name-->
+                                <div class="px-4 mb-2">
+                                    <div class="col">
+                                        <div class="grid grid-cols-3">
+                                            <InputLabel value="Bank Name"/>
+
+                                            <div class="col-span-2">
+                                                <InputBold :value="allocation.bank.name"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!---Account Number-->
+                                <div class="px-4 mb-2">
+                                    <div class="col">
+                                        <div class="grid grid-cols-3">
+                                            <InputLabel value="Account Number"/>
+
+                                            <div class="col-span-2">
+                                                <InputBold :value="allocation.account_number"/>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <!--Status-->
-                                <div class="px-4">
-                                    <div class="row">
-                                        <div class="col">
-                                            <div
-                                                class="grid grid-cols-2">
-                                                <label class="mt-5 text-xs text-primary-700 font-normal">Approval Status</label>
-                                                <div class="mt-5 -ml-5 text-xs font-bold text-gray-900">
-                                                    {{ getStatusText(form.status)}}
-                                                </div>
-                                                <TextInput
-                                                    id="status"
-                                                    type="number"
-                                                    class="mt-2 block w-full rounded-full text-xs"
-                                                    v-model="form.status"
-                                                    autofocus
-                                                    autocomplete="username"
-                                                    placeholder="RM 800,000.00"
-                                                    disabled
-                                                    v-if="shouldShowInput"
-                                                />
+                                <div class="px-4 -mb-1 mt-6">
+                                    <div class="col">
+                                        <div class="grid grid-cols-3">
+                                            <InputLabel value="Status"/>
+
+                                            <div class="col-span-2">
+                                                <InputBold :value="getStatusText(form.status)"/>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div v-if="form.status == 4" class="px-4">
-                                    <div class="row">
+                                <div v-if="form.status == 4">
+                                    <!--Reject Reason-->
+                                    <div class="px-4">
                                         <div class="col">
-                                            <div
-                                                class="grid grid-cols-2">
-                                                <label class="mb-20 mt-5 text-xs text-primary-700 font-normal">Reason</label>
-                                                <div class="mt-5 -ml-5 text-xs font-bold text-gray-900">
-                                                    {{ form.reject_reason}}
+                                            <div class="grid grid-cols-3">
+                                                <InputLabel value="Reason"/>
+
+                                                <div class="col-span-2">
+                                                    <InputBold :value="allocation.reject_reason"/>
                                                 </div>
-                                                <TextInput
-                                                    id="status"
-                                                    type="number"
-                                                    class="mt-2 block w-full rounded-full text-xs"
-                                                    v-model="form.reject_reason"
-                                                    autofocus
-                                                    autocomplete="username"
-                                                    placeholder="RM 800,000.00"
-                                                    disabled
-                                                    v-if="shouldShowInput"
-                                                />
                                             </div>
                                         </div>
                                     </div>

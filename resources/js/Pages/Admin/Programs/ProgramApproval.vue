@@ -209,9 +209,9 @@ const { value } = await Swal.fire({
 const getStatusText = (status) => {
     switch (status) {
         case 1:
-            return 'Processing';
+            return 'Submitted';
         case 2:
-            return 'Processed';
+            return 'Recommended';
         case 3:
             return 'Approved';
         case 4:

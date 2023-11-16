@@ -6,4 +6,11 @@
     .text-xxs-custom {
       font-size: 0.625rem; /* You can adjust the size to your preference */
     }
+    .text-xxs{
+      font-size: 0.625rem
+    }
+
+    .text-2xs{
+      font-size: 0.425rem
+    }
   }
